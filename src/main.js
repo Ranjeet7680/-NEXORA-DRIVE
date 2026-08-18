@@ -151,18 +151,16 @@ class Game {
         const mode = this.cameraManager.nextCameraMode();
         return mode.name;
       },
-      onToggleHeadlights: () => {
-        const lights = this.currentVehicleMesh.userData.headlights;
-        if (lights) {
-          const newState = !lights[0].visible;
-          lights.forEach(l => l.visible = newState);
-        }
-      },
+      onToggleHeadlights: () => this.physicsEngine.toggleHeadlights(),
+      onToggleHazard: () => this.physicsEngine.toggleHazard(),
+      onToggleIndicatorL: () => this.physicsEngine.toggleIndicator('left'),
+      onToggleIndicatorR: () => this.physicsEngine.toggleIndicator('right'),
       onPlayHorn: () => this.audioEngine.playHorn(),
       onRespawn: () => this.physicsEngine.respawn(),
       onGasPress: (pressed) => { this.physicsEngine.inputThrottle = pressed ? 1 : 0; },
       onBrakePress: (pressed) => { this.physicsEngine.inputThrottle = pressed ? -1 : 0; },
-      onHandbrakePress: (pressed) => { this.physicsEngine.inputHandbrake = pressed; }
+      onHandbrakePress: (pressed) => { this.physicsEngine.inputHandbrake = pressed; },
+      onNitroPress: (pressed) => { this.nitroActive = pressed && (this.nitro > 5); }
     });
 
     // Settings UI
@@ -269,6 +267,18 @@ class Game {
           break;
         case 'KeyN':
           this.nitroActive = (this.nitro > 5);
+          break;
+        case 'KeyL':
+          this.physicsEngine.toggleHeadlights();
+          break;
+        case 'KeyJ':
+          this.physicsEngine.toggleIndicator('left');
+          break;
+        case 'KeyK':
+          this.physicsEngine.toggleIndicator('right');
+          break;
+        case 'KeyX':
+          this.physicsEngine.toggleHazard();
           break;
         case 'KeyC':
           this.cameraManager.nextCameraMode();
@@ -460,13 +470,17 @@ class Game {
       this.physicsEngine.position,
       this.physicsEngine.rotation,
       this.aiNavigation.turnInstruction,
-      // Extra gameplay data
+      // Extra gameplay & lighting data
       {
         fuel: this.fuel,
         nitro: this.nitro,
         nitroActive: this.nitroActive,
         driftScore: Math.floor(this.driftScore),
         driftCombo: this.driftCombo,
+        headlightState: this.physicsEngine.headlightState,
+        indicatorState: this.physicsEngine.indicatorState,
+        indicatorBlinkOn: this.physicsEngine.indicatorBlinkOn,
+        damageHealth: this.physicsEngine.damageHealth
       }
     );
 

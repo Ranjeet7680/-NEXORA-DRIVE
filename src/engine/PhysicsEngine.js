@@ -23,9 +23,15 @@ export class PhysicsEngine {
     this.bodyPitch = 0;
     this.damageHealth = 100;
 
+    // ── Lighting & Indicator States ──
+    this.headlightState = 'on'; // 'off' | 'on' | 'high'
+    this.indicatorState = 'none'; // 'none' | 'left' | 'right' | 'hazard'
+    this.indicatorBlinkTimer = 0;
+    this.indicatorBlinkOn = false;
+
     // Control Inputs
     this.inputThrottle = 0; // 1 = Gas, -1 = Brake/Reverse
-    this.inputSteer = 0;    // -1 = Left (A/LeftArrow), +1 = Right (D/RightArrow)
+    this.inputSteer = 0;    // -1 = Left, +1 = Right
     this.inputHandbrake = false;
 
     this.vehicleConfig = null;
@@ -49,6 +55,23 @@ export class PhysicsEngine {
 
     const rideOffset = (upgrades.rideHeight || 0) * 0.05;
     this.position.y = this.terrainManager.getHeightAt(this.position.x, this.position.z) + config.wheelRadius + rideOffset;
+  }
+
+  toggleHeadlights() {
+    if (this.headlightState === 'off') this.headlightState = 'on';
+    else if (this.headlightState === 'on') this.headlightState = 'high';
+    else this.headlightState = 'off';
+    return this.headlightState;
+  }
+
+  toggleHazard() {
+    this.indicatorState = (this.indicatorState === 'hazard') ? 'none' : 'hazard';
+    return this.indicatorState;
+  }
+
+  toggleIndicator(dir) { // 'left' or 'right'
+    this.indicatorState = (this.indicatorState === dir) ? 'none' : dir;
+    return this.indicatorState;
   }
 
   update(deltaTime) {
@@ -86,19 +109,13 @@ export class PhysicsEngine {
     const speedDamping = Math.max(0.35, 1.0 - (this.speedKmh / (this.vehicleConfig.topSpeed * 1.2)));
     const targetSteer = this.inputSteer * maxSteer * speedDamping;
     
-    // Smooth steering angle interpolation
     this.steeringAngle += (targetSteer - this.steeringAngle) * Math.min(1.0, deltaTime * this.vehicleConfig.steeringSpeed * 3.5);
 
     // 5. Angular Velocity & Correct Yaw Turn Direction
-    // In Three.js: +Z is forward direction of travel for our vehicle Euler.
-    // When inputSteer > 0 (Right), vehicle must turn RIGHT (yaw angle decreases / rotates clockwise around +Y).
-    // When inputSteer < 0 (Left), vehicle must turn LEFT (yaw angle increases / rotates counter-clockwise around +Y).
     const turnRadius = this.vehicleConfig.dimensions.length / Math.tan(Math.max(0.01, Math.abs(this.steeringAngle)));
     const forwardSpeed = this.velocity.length();
 
     const driftSlipMultiplier = this.isDrifting ? (1.6 / Math.max(0.2, this.surfaceFriction)) : 1.0;
-    
-    // Correct Yaw direction formula: inputSteer > 0 -> turn right (-yaw); inputSteer < 0 -> turn left (+yaw)
     const targetYawRate = -Math.sign(this.steeringAngle) * (forwardSpeed / turnRadius) * driftSlipMultiplier;
     
     this.angularVelocity += (targetYawRate - this.angularVelocity) * Math.min(1.0, deltaTime * 8.0);
@@ -136,10 +153,37 @@ export class PhysicsEngine {
       this.velocity.setLength(topSpeedMs);
     }
 
-    // Position Update
+    // 7. Position Integration
     this.position.addScaledVector(this.velocity, deltaTime);
 
-    // Ground Height Snapping (Vehicle smoothly sits on road/terrain surface)
+    // ── 8. PHYSICAL OBSTACLE COLLISION DETECTION & RESPONSE ──
+    // "Block ke aar ya paar nahi ho sakta"
+    const vehicleRadius = Math.max(1.4, this.vehicleConfig.dimensions.length * 0.35);
+    const collision = this.terrainManager.checkCollision(this.position.x, this.position.z, vehicleRadius);
+
+    if (collision) {
+      // 1. Push car OUT of solid obstacle so it NEVER penetrates/passes through
+      this.position.x += collision.normalX * (collision.overlap + 0.05);
+      this.position.z += collision.normalZ * (collision.overlap + 0.05);
+
+      // 2. Velocity bounce / reflection
+      const velDotNorm = this.velocity.x * collision.normalX + this.velocity.z * collision.normalZ;
+      if (velDotNorm < 0) {
+        // Elastic rebound
+        const restitution = 0.35;
+        this.velocity.x -= (1 + restitution) * velDotNorm * collision.normalX;
+        this.velocity.z -= (1 + restitution) * velDotNorm * collision.normalZ;
+        this.velocity.multiplyScalar(0.7); // Friction loss on impact
+
+        // Impact damage
+        const impactSpeed = Math.abs(velDotNorm) * 3.6;
+        if (impactSpeed > 15) {
+          this.damageHealth = Math.max(10, this.damageHealth - impactSpeed * 0.12);
+        }
+      }
+    }
+
+    // 9. Ground Height Snapping (Vehicle smoothly sits on road/terrain surface)
     const groundY = this.terrainManager.getHeightAt(this.position.x, this.position.z);
     const targetY = groundY + this.vehicleConfig.wheelRadius + ((this.upgradeLevels.rideHeight || 0) * 0.05);
     this.position.y += (targetY - this.position.y) * Math.min(1.0, deltaTime * 14.0);
@@ -162,6 +206,53 @@ export class PhysicsEngine {
       wheels.forEach(w => {
         w.children[0].rotation.x += (currentForwardSpeed * deltaTime) / this.vehicleConfig.wheelRadius;
       });
+    }
+
+    // ── 10. REAL-TIME LIGHTING & HEADLIGHT SYNCHRONIZATION ──
+    const headlights = this.vehicleMesh.userData.headlights;
+    const lightBeams = this.vehicleMesh.userData.lightBeams;
+    if (headlights && headlights.length >= 2) {
+      if (this.headlightState === 'off') {
+        headlights[0].intensity = 0;
+        headlights[1].intensity = 0;
+        if (lightBeams) { lightBeams[0].visible = false; lightBeams[1].visible = false; }
+      } else if (this.headlightState === 'on') {
+        headlights[0].intensity = 5.0;
+        headlights[1].intensity = 5.0;
+        headlights[0].distance = 80;
+        headlights[1].distance = 80;
+        if (lightBeams) { lightBeams[0].visible = true; lightBeams[1].visible = true; lightBeams[0].material.opacity = 0.15; lightBeams[1].material.opacity = 0.15; }
+      } else if (this.headlightState === 'high') {
+        headlights[0].intensity = 9.0;
+        headlights[1].intensity = 9.0;
+        headlights[0].distance = 140;
+        headlights[1].distance = 140;
+        if (lightBeams) { lightBeams[0].visible = true; lightBeams[1].visible = true; lightBeams[0].material.opacity = 0.28; lightBeams[1].material.opacity = 0.28; }
+      }
+    }
+
+    // Active Brake Lights Flare
+    const brakeLights = this.vehicleMesh.userData.brakeLights;
+    if (brakeLights && brakeLights.length >= 2) {
+      const isBraking = this.inputThrottle < 0;
+      brakeLights.forEach(bl => {
+        bl.material.emissiveIntensity = isBraking ? 3.5 : 0.8;
+      });
+    }
+
+    // Turn Indicator Blinking Logic (0.4s blink interval)
+    this.indicatorBlinkTimer += deltaTime;
+    if (this.indicatorBlinkTimer > 0.4) {
+      this.indicatorBlinkTimer = 0;
+      this.indicatorBlinkOn = !this.indicatorBlinkOn;
+    }
+
+    const indicators = this.vehicleMesh.userData.indicators;
+    if (indicators && indicators.length >= 2) {
+      const leftOn = (this.indicatorState === 'left' || this.indicatorState === 'hazard') && this.indicatorBlinkOn;
+      const rightOn = (this.indicatorState === 'right' || this.indicatorState === 'hazard') && this.indicatorBlinkOn;
+      indicators[0].material.emissiveIntensity = leftOn ? 3.0 : 0.0;
+      indicators[1].material.emissiveIntensity = rightOn ? 3.0 : 0.0;
     }
 
     // Speedometer (km/h)

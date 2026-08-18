@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { TextureGenerator } from '../engine/TextureGenerator.js';
 
 export class VehicleBuilder {
   static createVehicleMesh(config, customUpgrades = {}) {
@@ -33,8 +34,9 @@ export class VehicleBuilder {
 
     const darkMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 });
     const chromeMaterial = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.1, metalness: 0.95 });
-    const lightMaterial = new THREE.MeshStandardMaterial({ color: 0xffffcc, emissive: 0xffffaa, emissiveIntensity: 1.2 });
-    const brakeLightMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xcc0000, emissiveIntensity: 1.2 });
+    const lightMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffee, emissiveIntensity: 2.0 });
+    const brakeLightMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xcc0000, emissiveIntensity: 1.5 });
+    const indicatorMaterial = new THREE.MeshStandardMaterial({ color: 0xff8800, emissive: 0xff6600, emissiveIntensity: 0.0 });
 
     // Chassis Base Group
     const chassis = new THREE.Group();
@@ -46,19 +48,19 @@ export class VehicleBuilder {
       case 'car':
       case 'taxi':
       case 'police':
-        VehicleBuilder.buildSedanBody(chassis, config, bodyMaterial, glassMaterial, darkMaterial, chromeMaterial, lightMaterial, brakeLightMaterial, customUpgrades);
+        VehicleBuilder.buildSedanBody(chassis, config, bodyMaterial, glassMaterial, darkMaterial, chromeMaterial, lightMaterial, brakeLightMaterial, indicatorMaterial, customUpgrades);
         break;
       case 'bus':
-        VehicleBuilder.buildBusBody(chassis, config, bodyMaterial, glassMaterial, darkMaterial, chromeMaterial, lightMaterial, brakeLightMaterial);
+        VehicleBuilder.buildBusBody(chassis, config, bodyMaterial, glassMaterial, darkMaterial, chromeMaterial, lightMaterial, brakeLightMaterial, indicatorMaterial);
         break;
       case 'bike':
         VehicleBuilder.buildBikeBody(chassis, config, bodyMaterial, glassMaterial, darkMaterial, chromeMaterial, lightMaterial, brakeLightMaterial);
         break;
       case 'truck':
-        VehicleBuilder.buildTruckBody(chassis, config, bodyMaterial, glassMaterial, darkMaterial, chromeMaterial, lightMaterial, brakeLightMaterial);
+        VehicleBuilder.buildTruckBody(chassis, config, bodyMaterial, glassMaterial, darkMaterial, chromeMaterial, lightMaterial, brakeLightMaterial, indicatorMaterial);
         break;
       case 'suv':
-        VehicleBuilder.buildSuvBody(chassis, config, bodyMaterial, glassMaterial, darkMaterial, chromeMaterial, lightMaterial, brakeLightMaterial);
+        VehicleBuilder.buildSuvBody(chassis, config, bodyMaterial, glassMaterial, darkMaterial, chromeMaterial, lightMaterial, brakeLightMaterial, indicatorMaterial);
         break;
     }
 
@@ -93,6 +95,7 @@ export class VehicleBuilder {
     });
 
     // Modular Underglow Neon Lights
+    let underglowMesh = null;
     if (customUpgrades.underglow && customUpgrades.underglow !== 'none') {
       const underColor = customUpgrades.underglowHex || 0x00f0ff;
       const glowGeo = new THREE.PlaneGeometry(config.dimensions.width * 1.2, config.dimensions.length * 1.1);
@@ -102,26 +105,32 @@ export class VehicleBuilder {
         transparent: true,
         opacity: 0.6
       });
-      const glowMesh = new THREE.Mesh(glowGeo, glowMat);
-      glowMesh.position.set(0, 0.05, 0);
-      chassis.add(glowMesh);
+      underglowMesh = new THREE.Mesh(glowGeo, glowMat);
+      underglowMesh.position.set(0, 0.05, 0);
+      chassis.add(underglowMesh);
     }
 
-    // Add Headlights (Spotlights)
-    const headlightLeft = new THREE.SpotLight(0xffffff, 3.5, 50, Math.PI / 6, 0.4, 1);
-    const headlightRight = new THREE.SpotLight(0xffffff, 3.5, 50, Math.PI / 6, 0.4, 1);
-    
+    // ── Functional Real Dual Headlights (Spotlights) ──
     const headZ = config.dimensions.length * 0.5;
     const headX = config.dimensions.width * 0.35;
-    const headY = config.dimensions.height * 0.4;
+    const headY = config.dimensions.height * 0.42;
+
+    const headlightLeft = new THREE.SpotLight(0xfffaed, 5.0, 90, Math.PI / 5, 0.3, 1.2);
+    const headlightRight = new THREE.SpotLight(0xfffaed, 5.0, 90, Math.PI / 5, 0.3, 1.2);
+    headlightLeft.castShadow = true;
+    headlightRight.castShadow = true;
+    headlightLeft.shadow.mapSize.width = 512;
+    headlightLeft.shadow.mapSize.height = 512;
+    headlightRight.shadow.mapSize.width = 512;
+    headlightRight.shadow.mapSize.height = 512;
 
     headlightLeft.position.set(-headX, headY, headZ);
     headlightRight.position.set(headX, headY, headZ);
 
     const targetLeft = new THREE.Object3D();
     const targetRight = new THREE.Object3D();
-    targetLeft.position.set(-headX, headY - 0.2, headZ + 20);
-    targetRight.position.set(headX, headY - 0.2, headZ + 20);
+    targetLeft.position.set(-headX, headY - 0.5, headZ + 40);
+    targetRight.position.set(headX, headY - 0.5, headZ + 40);
 
     chassis.add(targetLeft);
     chassis.add(targetRight);
@@ -131,10 +140,39 @@ export class VehicleBuilder {
     chassis.add(headlightLeft);
     chassis.add(headlightRight);
 
+    // ── Volumetric Light Beams (Forward Cones) ──
+    const beamGeo = new THREE.ConeGeometry(4.5, 35, 16, 1, true);
+    beamGeo.rotateX(Math.PI / 2);
+    beamGeo.translate(0, 0, 17.5);
+    const beamMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const beamLeft = new THREE.Mesh(beamGeo, beamMat);
+    const beamRight = new THREE.Mesh(beamGeo, beamMat);
+    beamLeft.position.set(-headX, headY, headZ);
+    beamRight.position.set(headX, headY, headZ);
+    chassis.add(beamLeft);
+    chassis.add(beamRight);
+
+    // ── Cockpit Interior Dome Ambient Light ──
+    const fpv = config.cameraOffsets.fpv;
+    const interiorLight = new THREE.PointLight(0x00f0ff, 1.2, 4.0);
+    interiorLight.position.set(0, fpv.y + 0.2, fpv.z);
+    chassis.add(interiorLight);
+
     group.userData = {
       chassis,
       wheels,
       headlights: [headlightLeft, headlightRight],
+      lightBeams: [beamLeft, beamRight],
+      interiorLight,
+      brakeLights: chassis.userData.brakeLights || [],
+      indicators: chassis.userData.indicators || [],
       config,
       steeringWheelMesh: chassis.getObjectByName('steeringWheelMesh'),
       wiperMesh: chassis.getObjectByName('wiperMesh')
@@ -166,7 +204,7 @@ export class VehicleBuilder {
     ];
   }
 
-  static buildSedanBody(chassis, config, bodyMat, glassMat, darkMat, chromeMat, lightMat, brakeMat, customUpgrades) {
+  static buildSedanBody(chassis, config, bodyMat, glassMat, darkMat, chromeMat, lightMat, brakeMat, indicatorMat, customUpgrades) {
     const { length, width, height } = config.dimensions;
 
     // Body Lower Chassis
@@ -196,7 +234,7 @@ export class VehicleBuilder {
     wiperMesh.position.set(0, height * 0.62, length * 0.22);
     chassis.add(wiperMesh);
 
-    // Headlights Mesh Bulbs
+    // Headlights Mesh Bulbs (Front)
     const headBulbGeo = new THREE.BoxGeometry(width * 0.22, height * 0.15, 0.1);
     const headL = new THREE.Mesh(headBulbGeo, lightMat);
     const headR = new THREE.Mesh(headBulbGeo, lightMat);
@@ -205,13 +243,25 @@ export class VehicleBuilder {
     chassis.add(headL);
     chassis.add(headR);
 
-    // Brake Lights Mesh Bulbs
+    // Turn Indicators Bulbs (Front corners)
+    const indGeo = new THREE.BoxGeometry(width * 0.1, height * 0.1, 0.1);
+    const indFL = new THREE.Mesh(indGeo, indicatorMat);
+    const indFR = new THREE.Mesh(indGeo, indicatorMat);
+    indFL.position.set(-width * 0.46, height * 0.35, length * 0.48);
+    indFR.position.set(width * 0.46, height * 0.35, length * 0.48);
+    chassis.add(indFL);
+    chassis.add(indFR);
+
+    // Brake Lights Mesh Bulbs (Rear)
     const brakeL = new THREE.Mesh(headBulbGeo, brakeMat);
     const brakeR = new THREE.Mesh(headBulbGeo, brakeMat);
     brakeL.position.set(-width * 0.32, height * 0.4, -length * 0.5);
     brakeR.position.set(width * 0.32, height * 0.4, -length * 0.5);
     chassis.add(brakeL);
     chassis.add(brakeR);
+
+    chassis.userData.brakeLights = [brakeL, brakeR];
+    chassis.userData.indicators = [indFL, indFR];
 
     // Modular 3D Spoiler Attachment
     if (customUpgrades.spoiler && customUpgrades.spoiler !== 'none') {
@@ -227,7 +277,7 @@ export class VehicleBuilder {
     VehicleBuilder.addCockpitInterior(chassis, config, darkMat, chromeMat);
   }
 
-  static buildBusBody(chassis, config, bodyMat, glassMat, darkMat, chromeMat, lightMat, brakeMat) {
+  static buildBusBody(chassis, config, bodyMat, glassMat, darkMat, chromeMat, lightMat, brakeMat, indicatorMat) {
     const { length, width, height } = config.dimensions;
     const bodyGeo = new THREE.BoxGeometry(width, height * 0.85, length);
     const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
@@ -245,7 +295,7 @@ export class VehicleBuilder {
     chassis.add(tankMesh);
   }
 
-  static buildTruckBody(chassis, config, bodyMat, glassMat, darkMat, chromeMat, lightMat, brakeMat) {
+  static buildTruckBody(chassis, config, bodyMat, glassMat, darkMat, chromeMat, lightMat, brakeMat, indicatorMat) {
     const { length, width, height } = config.dimensions;
     const cabGeo = new THREE.BoxGeometry(width, height * 0.7, length * 0.4);
     const cabMesh = new THREE.Mesh(cabGeo, bodyMat);
@@ -255,7 +305,7 @@ export class VehicleBuilder {
     VehicleBuilder.addCockpitInterior(chassis, config, darkMat, chromeMat);
   }
 
-  static buildSuvBody(chassis, config, bodyMat, glassMat, darkMat, chromeMat, lightMat, brakeMat) {
+  static buildSuvBody(chassis, config, bodyMat, glassMat, darkMat, chromeMat, lightMat, brakeMat, indicatorMat) {
     const { length, width, height } = config.dimensions;
     const bodyGeo = new THREE.BoxGeometry(width, height * 0.65, length);
     const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
@@ -270,27 +320,66 @@ export class VehicleBuilder {
 
     const fpv = config.cameraOffsets.fpv;
 
-    // Cockpit Dashboard (positioned below driver line of sight)
-    const dashGeo = new THREE.BoxGeometry(config.dimensions.width * 0.85, 0.2, 0.4);
+    // Cockpit Main Dashboard Box
+    const dashGeo = new THREE.BoxGeometry(config.dimensions.width * 0.88, 0.28, 0.5);
     const dashMesh = new THREE.Mesh(dashGeo, darkMat);
-    dashMesh.position.set(0, fpv.y - 0.3, fpv.z + 0.4);
+    dashMesh.position.set(0, fpv.y - 0.28, fpv.z + 0.42);
     chassis.add(dashMesh);
 
-    // Interactive Steering Wheel Mesh
+    // ── High-Tech Dashboard Cluster Display Panel (Canvas Textured) ──
+    const dashTex = TextureGenerator.createDashboardTexture();
+    const clusterGeo = new THREE.PlaneGeometry(config.dimensions.width * 0.75, 0.24);
+    const clusterMat = new THREE.MeshBasicMaterial({ map: dashTex, transparent: true });
+    const clusterMesh = new THREE.Mesh(clusterGeo, clusterMat);
+    clusterMesh.position.set(0, fpv.y - 0.24, fpv.z + 0.25);
+    clusterMesh.rotation.x = -0.15;
+    chassis.add(clusterMesh);
+
+    // ── AC Vents (Chrome grill slats) ──
+    const ventGeo = new THREE.BoxGeometry(0.16, 0.06, 0.02);
+    const ventL = new THREE.Mesh(ventGeo, chromeMat);
+    const ventR = new THREE.Mesh(ventGeo, chromeMat);
+    ventL.position.set(-config.dimensions.width * 0.25, fpv.y - 0.22, fpv.z + 0.26);
+    ventR.position.set(config.dimensions.width * 0.25, fpv.y - 0.22, fpv.z + 0.26);
+    chassis.add(ventL);
+    chassis.add(ventR);
+
+    // ── Hazard & Engine Start Buttons on Dashboard ──
+    const startGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.02, 16);
+    startGeo.rotateX(Math.PI / 2);
+    const startMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.8 });
+    const startBtn = new THREE.Mesh(startGeo, startMat);
+    startBtn.position.set(0.12, fpv.y - 0.26, fpv.z + 0.25);
+    chassis.add(startBtn);
+
+    // ── Interactive Steering Wheel Mesh ──
     const wheelGroup = new THREE.Group();
     wheelGroup.name = 'steeringWheelMesh';
-    wheelGroup.position.set(fpv.x, fpv.y - 0.22, fpv.z + 0.35);
+    wheelGroup.position.set(fpv.x, fpv.y - 0.22, fpv.z + 0.32);
 
-    const ringGeo = new THREE.TorusGeometry(0.18, 0.025, 8, 24);
-    const ringMesh = new THREE.Mesh(ringGeo, darkMat);
+    const ringGeo = new THREE.TorusGeometry(0.19, 0.028, 12, 32);
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0x222226, roughness: 0.4, metalness: 0.2 });
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
     wheelGroup.add(ringMesh);
 
-    // Driver Hands Mesh (Spheres holding steering wheel)
-    const handMat = new THREE.MeshStandardMaterial({ color: 0xc58c5c });
-    const handLeft = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), handMat);
-    const handRight = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), handMat);
-    handLeft.position.set(-0.16, 0, 0);
-    handRight.position.set(0.16, 0, 0);
+    // Center Hub with Cyber Crest
+    const hubGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.04, 16);
+    hubGeo.rotateX(Math.PI / 2);
+    const hubMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 0.8 });
+    const hubMesh = new THREE.Mesh(hubGeo, hubMat);
+    wheelGroup.add(hubMesh);
+
+    // Spokes
+    const spokeGeo = new THREE.BoxGeometry(0.32, 0.03, 0.02);
+    const spokeMesh = new THREE.Mesh(spokeGeo, darkMat);
+    wheelGroup.add(spokeMesh);
+
+    // ── Driver Hands Mesh (Spheres holding steering wheel) ──
+    const handMat = new THREE.MeshStandardMaterial({ color: 0xc58c5c, roughness: 0.7 });
+    const handLeft = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), handMat);
+    const handRight = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), handMat);
+    handLeft.position.set(-0.17, 0, 0);
+    handRight.position.set(0.17, 0, 0);
     wheelGroup.add(handLeft);
     wheelGroup.add(handRight);
 

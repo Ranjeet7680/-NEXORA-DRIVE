@@ -1,4 +1,4 @@
-// In-Game Cyberpunk HUD with Interactive Real-Time Mini-Map for NEXORA DRIVE
+// In-Game Cyberpunk HUD with Interactive Real-Time Mini-Map & Complete Car Controls for NEXORA DRIVE
 
 export class HUD {
   constructor(container, callbacks) {
@@ -16,7 +16,7 @@ export class HUD {
     this.hudElement = document.createElement('div');
     this.hudElement.className = 'game-hud';
     this.hudElement.innerHTML = `
-      <!-- Top Bar: Biome, Weather, Clock, Credits -->
+      <!-- Top Bar: Biome, Weather, Clock, Credits & Main Navigation -->
       <div class="hud-top-bar">
         <div class="hud-item biome-tag" id="hudBiome"><span class="icon">🌆</span> Metropolis City</div>
         <div class="hud-item weather-tag" id="hudWeather">☀️ Sunny</div>
@@ -40,10 +40,13 @@ export class HUD {
         <div class="minimap-label">MINI MAP RADAR</div>
       </div>
 
-      <!-- Bottom Center: Camera & Controls Toggles -->
+      <!-- Bottom Center: Complete Car Lighting & Controls Dashboard -->
       <div class="hud-center-toggles">
-        <button class="ctrl-pill-btn" id="btnCamSwitch">📷 View: <span id="camName">1st Person</span></button>
-        <button class="ctrl-pill-btn" id="btnHeadlights">💡 Lights</button>
+        <button class="ctrl-pill-btn" id="btnIndicatorL" title="Left Turn Signal">◀</button>
+        <button class="ctrl-pill-btn" id="btnHeadlights">💡 Lights: <span id="headlightStateTxt">ON</span></button>
+        <button class="ctrl-pill-btn" id="btnHazard" title="Hazard Flasher">⚠️</button>
+        <button class="ctrl-pill-btn" id="btnIndicatorR" title="Right Turn Signal">▶</button>
+        <button class="ctrl-pill-btn" id="btnCamSwitch">📷 <span id="camName">1st Person</span></button>
         <button class="ctrl-pill-btn" id="btnHorn">📣 Horn</button>
         <button class="ctrl-pill-btn" id="btnRespawn">🔄 Unstuck</button>
       </div>
@@ -61,7 +64,7 @@ export class HUD {
         <div class="v-stats">
           <div class="v-stat-item"><span>FUEL</span><div class="bar"><div class="fill" id="fuelFill" style="width: 100%;"></div></div></div>
           <div class="v-stat-item"><span>⚡NOS</span><div class="bar"><div class="fill nitro" id="nitroFill" style="width: 100%;"></div></div></div>
-          <div class="v-stat-item"><span>HP</span><div class="bar"><div class="fill health" style="width: 100%;"></div></div></div>
+          <div class="v-stat-item"><span>HP</span><div class="bar"><div class="fill health" id="healthFill" style="width: 100%;"></div></div></div>
         </div>
       </div>
 
@@ -83,7 +86,6 @@ export class HUD {
 
     this.container.appendChild(this.hudElement);
 
-
     this.miniMapCanvas = this.hudElement.querySelector('#minimapCanvas');
     this.miniMapCtx = this.miniMapCanvas.getContext('2d');
 
@@ -103,6 +105,9 @@ export class HUD {
     bindBtn('btnPause', 'onTogglePause');
     bindBtn('btnCamSwitch', 'onNextCamera');
     bindBtn('btnHeadlights', 'onToggleHeadlights');
+    bindBtn('btnHazard', 'onToggleHazard');
+    bindBtn('btnIndicatorL', 'onToggleIndicatorL');
+    bindBtn('btnIndicatorR', 'onToggleIndicatorR');
     bindBtn('btnHorn', 'onPlayHorn');
     bindBtn('btnRespawn', 'onRespawn');
 
@@ -129,7 +134,15 @@ export class HUD {
     if (handbrakeBtn) {
       handbrakeBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.callbacks.onHandbrakePress && this.callbacks.onHandbrakePress(true); });
       handbrakeBtn.addEventListener('touchend',   (e) => { e.preventDefault(); this.callbacks.onHandbrakePress && this.callbacks.onHandbrakePress(false); });
+      handbrakeBtn.addEventListener('mousedown',  () => this.callbacks.onHandbrakePress && this.callbacks.onHandbrakePress(true));
+      handbrakeBtn.addEventListener('mouseup',    () => this.callbacks.onHandbrakePress && this.callbacks.onHandbrakePress(false));
+    }
 
+    if (nitroBtn) {
+      nitroBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.callbacks.onNitroPress && this.callbacks.onNitroPress(true); });
+      nitroBtn.addEventListener('touchend',   (e) => { e.preventDefault(); this.callbacks.onNitroPress && this.callbacks.onNitroPress(false); });
+      nitroBtn.addEventListener('mousedown',  () => this.callbacks.onNitroPress && this.callbacks.onNitroPress(true));
+      nitroBtn.addEventListener('mouseup',    () => this.callbacks.onNitroPress && this.callbacks.onNitroPress(false));
     }
   }
 
@@ -149,19 +162,49 @@ export class HUD {
     const rpmPct = Math.min(100, Math.max(0, (rpm / 7500) * 100));
     this.hudElement.querySelector('#rpmFill').style.width = `${rpmPct}%`;
 
-    // Fuel & Nitro Bars
+    // Lighting button states & indicators
     if (gameplayData) {
+      const headTxt = this.hudElement.querySelector('#headlightStateTxt');
+      const headBtn = this.hudElement.querySelector('#btnHeadlights');
+      if (headTxt && headBtn) {
+        headTxt.innerText = gameplayData.headlightState.toUpperCase();
+        headBtn.style.borderColor = gameplayData.headlightState !== 'off' ? '#00f0ff' : 'rgba(255,255,255,0.2)';
+        headBtn.style.boxShadow = gameplayData.headlightState === 'high' ? '0 0 14px #00f0ff' : 'none';
+      }
+
+      const hazBtn = this.hudElement.querySelector('#btnHazard');
+      if (hazBtn) {
+        hazBtn.style.background = (gameplayData.indicatorState === 'hazard' && gameplayData.indicatorBlinkOn) ? '#ff0055' : 'rgba(5, 11, 20, 0.82)';
+      }
+
+      const indL = this.hudElement.querySelector('#btnIndicatorL');
+      const indR = this.hudElement.querySelector('#btnIndicatorR');
+      if (indL) {
+        indL.style.background = ((gameplayData.indicatorState === 'left' || gameplayData.indicatorState === 'hazard') && gameplayData.indicatorBlinkOn) ? '#ffaa00' : 'rgba(5, 11, 20, 0.82)';
+      }
+      if (indR) {
+        indR.style.background = ((gameplayData.indicatorState === 'right' || gameplayData.indicatorState === 'hazard') && gameplayData.indicatorBlinkOn) ? '#ffaa00' : 'rgba(5, 11, 20, 0.82)';
+      }
+
+      // Fuel, NOS, Health Bars
       const fuelFill = this.hudElement.querySelector('#fuelFill');
       if (fuelFill) {
         fuelFill.style.width = `${Math.max(0, gameplayData.fuel)}%`;
         fuelFill.style.background = gameplayData.fuel < 20 ? '#ff3300' : '#22cc44';
       }
+
       const nitroFill = this.hudElement.querySelector('#nitroFill');
       if (nitroFill) {
         nitroFill.style.width = `${Math.max(0, gameplayData.nitro)}%`;
         nitroFill.style.background = gameplayData.nitroActive ? '#ffffff' : '#00aaff';
         nitroFill.style.boxShadow  = gameplayData.nitroActive ? '0 0 12px #00ffff' : 'none';
       }
+
+      const healthFill = this.hudElement.querySelector('#healthFill');
+      if (healthFill) {
+        healthFill.style.width = `${Math.max(0, gameplayData.damageHealth)}%`;
+      }
+
       // Drift Score display
       const driftHud = this.hudElement.querySelector('#driftScoreHud');
       if (driftHud) {
