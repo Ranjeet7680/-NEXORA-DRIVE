@@ -2,58 +2,63 @@
 
 ![NEXORA DRIVE](/public/assets/loading/loading_car.png)
 
-**NEXORA DRIVE** is a next-generation 3D WebGL First-Person Open-World Driving Simulator built with Three.js, Web Audio API, Web Speech API, and Vite. Experience an ultra-immersive first-person cockpit driving experience across 5 connected biomes with dynamic weather, intelligent AI traffic, voice-enabled AI copilot, procedural 7-station radio player, and an advanced 3D modular vehicle customization studio.
+**NEXORA DRIVE** is a high-performance 3D WebGL First-Person Open-World Driving Simulator built with Three.js, Web Audio API, Web Speech API, and Vite. Explore 5 connected biomes across a 2400x2400 world map featuring wide asphalt highways, dynamic weather, intelligent traffic, an AI voice copilot, a 10-track custom MP3 radio player, an interactive real-time mini-map canvas, and an advanced 3D modular vehicle customization studio.
 
 ---
 
-## 🌟 Key Features
+## 🌟 Features & Upgrades
 
-### 🚗 1. 7 Vehicle Classes & Realistic Physics
-- **Vehicle Fleet**: Apex GT Sport (Car), Metro City Express (Bus), HyperBlade 1000RR (Motorcycle), IronTitan Heavy Cargo (Semi Truck), Metropolitan Taxi (Taxi), TerraTrack 4x4 (SUV), Interceptor Pursuit Unit (Police vehicle with siren & lightbar).
-- **Physics Engine**: Raycast wheel suspension, weight transfer, body roll/pitch during cornering and acceleration, 6-speed automatic/manual transmission, and auto-stuck respawn helper.
-- **Surface Friction Dynamics**: Dynamic grip changes across Asphalt (1.0), Dirt (0.75), River Basin (0.85), and Ice Hills (0.25 for icy drifting!).
+### 🗺️ 1. Interactive Real-Time Mini-Map Canvas
+- **Live World Map**: Renders an interactive 2D mini-map in the bottom-left corner with real-time player position tracking.
+- **Biomes & Roads**: Renders terrain regions (City, Forest, Mountains, River, Ice Hills) and the outer ring highway circuit directly from engine data.
+- **Heading Direction**: Rotates player arrow indicator according to vehicle heading angle `vehicleRotation.y`.
+- **GPS Target Markers**: Shows active mission targets (`#ff0055`), Garage hub (`#00f0ff`), and city landmarks.
 
-### 🌆 2. 5 Connected Open-World Biomes
-1. **Metropolis City**: High-rise skyscrapers, neon billboards, streetlights, traffic signals, animated Metro trains, and pedestrians.
-2. **Pine Forest**: Dense trees, dirt tracks, wooden bridges, fog, mist.
-3. **Alpine Mountains**: High elevation peaks, hairpin bends, mountain tunnels, cliff viewpoints.
-4. **River & Coast**: Dynamic water shader surface, sandy beach, waterfront highway, wooden river bridge.
-5. **Ice Hills & Glaciers**: Snow heightmap, icy highways, frozen lake, snow pine trees, blizzard weather.
+### 🎵 2. 10 Custom MP3 In-Car Radio Tracks
+Includes 10 custom MP3 music tracks integrated directly into the in-car entertainment system:
+- 🎧 **Ranjeet Kumar** (`98.5 FM`)
+- 🔥 **थारी जिंदगी म्हारी मौज (Remix)** (`102.1 FM`)
+- 🎵 **थारी जिंदगी म्हारी मौज** (`94.3 FM`)
+- 🎺 **Aryan Bhai Ki Shaadi** (`88.7 FM`)
+- 🌙 **Dhanbad Dreams (Vibe)** (`105.9 FM`)
+- 🏙️ **Dhanbad Dreams** (`91.1 FM`)
+- 🔊 **Ranjeet Ka Vibe (Dubstep)** (`107.7 FM`)
+- ⚡ **Ranjeet Ka Vibe** (`99.9 FM`)
+- 🎤 **Ranjeet Kumar (Extended)** (`104.5 FM`)
+- 🎉 **Aryan Bhai Ki Shaadi (Celebration)** (`96.3 FM`)
 
-### 🤖 3. AI Copilot & Voice Command System
-- **Voice Recognition**: Press mic button or type text commands (*"Take me to ice hills"*, *"Take me to mountains"*, *"Turn on headlights"*, *"Play night drive music"*, *"Make it rain"*, *"How fast am I going?"*).
-- **Speech Synthesis**: Vocal response output via Web Speech Synthesis + floating HUD speech bubble.
+### 🚗 3. 7 Vehicle Classes & Raycast Physics
+- **Vehicles**: Apex GT Sport (Car), Metro City Express (Bus), HyperBlade 1000RR (Motorcycle), IronTitan Heavy Cargo (Semi Truck), Metropolitan Taxi (Taxi), TerraTrack 4x4 (SUV), Interceptor Pursuit Unit (Police car).
+- **Physics**: Speed-sensitive steering, weight transfer body roll & pitch, reverse gear (`gear = 'R'`), surface grip dynamics across Asphalt (1.0), Dirt (0.75), River (0.85), and Ice (0.25).
 
-### 🎵 4. 7-Station In-Car Radio Synthesizer
-- 🌆 **NEXORA FM** (80s Synthwave)
-- ⚡ **City Beats** (Cyber Electro)
-- 🎸 **Road Trip Radio** (Pop / Rock Chords)
-- 🏔️ **Mountain FM** (Acoustic Ambient)
-- 🌙 **Night Drive** (Deep Chillwave)
-- ☕ **Chill Drive** (Lo-Fi Beats)
-- 🏁 **Racing Radio** (High Energy Drum & Bass)
+### 🌆 4. 5 Connected Open-World Biomes
+1. **Metropolis City**: High-rise skyscrapers, streetlamps, traffic signals, animated Metro trains.
+2. **Pine Forest**: Dense trees, dirt tracks, wooden bridges, fog.
+3. **Alpine Mountains**: Hairpin bends, mountain tunnels, cliff viewpoints.
+4. **River & Coast**: Dynamic water shader, sandy beach, wooden river bridge.
+5. **Ice Hills & Glaciers**: Snow mountain peaks, 3D glacier ice formations, slippery ice highway, falling snow particles.
 
-### 🏎️ 5. Advanced 3D Vehicle Customization Studio
-- **Modular 3D Parts**: Interchangeable GT spoilers, custom rim sizing (15", 16", 17", 18", 19", 20"), underglow neon RGB colors (Cyan, Pink, Lime, Amber, Blue, Red).
-- **PBR Paint Studio**: Finish presets (Gloss, Metallic Chrome, Matte Stealth, Carbon Fiber Weave) + RGB Color Picker.
-- **Stance Height Sliders**: Suspension ride height adjustment (-5cm stance drop to +10cm lift).
-- **AI Mechanic**: One-click tuning prompts (*"Build for Snow"*, *"Sporty GT Setup"*).
+### 📱 5. Mobile Touch & Performance Optimization
+- **Responsive Controls**: Left/Right steer buttons, 360° virtual steering wheel, Gyroscope tilt, GAS, BRAKE/REVERSE, and PARK (Handbrake).
+- **Auto Optimize**: Detects device GPU/CPU memory & cores to set Low/Medium/High/Ultra graphics presets.
+- **Battery Saver Mode**: 30 FPS target option for mobile thermal management.
+- **Haptic Vibration**: Tactile touch feedback on pedal interactions.
 
-### ⚙️ 6. Comprehensive 20-Category Settings System
-- 🎮 Controls, 🚗 Driving, 📱 Gyroscope, 🎥 Camera, 🎨 Graphics, 🔊 Audio, 🎵 Music, 🤖 AI & Voice, 🗺️ Navigation, 🌦️ Weather, 🚦 Traffic, 🚘 Vehicle, 🌍 World, 📳 Haptics, 🌐 Language, ♿ Accessibility, 🔔 Notifications, 💾 Gameplay & Save, 🔒 Privacy, ℹ️ About.
-- **Real-time Engine Binding**: Adjust resolution scale, FPS targets (30/60/120/Unlimited), FOV, audio channels, and Gyroscope calibration.
+### ⚙️ 6. 20-Category Settings System
+- Real-time parameter binding for audio channels, camera FOV, graphics resolution, Gyroscope baseline calibration, weather overrides, and driving assists (ABS, TCS, ESP).
 
 ---
 
 ## 🎮 Controls & Keybindings
 
-| Input | Mobile Control | Desktop Keyboard |
+| Function | Mobile Input | Desktop Keyboard |
 | :--- | :--- | :--- |
 | **Accelerate** | Touch GAS pedal | `W` or `Up Arrow` |
 | **Brake / Reverse** | Touch BRAKE pedal | `S` or `Down Arrow` |
-| **Steer Left / Right** | 360° Steering Wheel / Gyroscope / Buttons | `A` / `D` or `Left` / `Right Arrow` |
+| **Steer Left** | Left Button / Steering Wheel | `A` or `Left Arrow` |
+| **Steer Right** | Right Button / Steering Wheel | `D` or `Right Arrow` |
 | **Handbrake** | Touch P pedal | `Spacebar` |
-| **Camera View Cycle** | Touch Camera button | `C` key |
+| **Camera View** | Touch Camera button | `C` key |
 | **Horn** | Touch Horn button | `H` key |
 | **Map Overlay** | Touch Map button | `M` key |
 | **Unstuck Respawn** | Touch Unstuck button | `R` key |
@@ -73,7 +78,7 @@ npm install
 # 3. Start Local Development Server
 npm run dev
 
-# 4. Build Production Distribution Bundle
+# 4. Build Production Bundle
 npm run build
 ```
 
@@ -81,13 +86,11 @@ Open `http://localhost:3000` in your web browser!
 
 ---
 
-## 📐 Technology Stack
+## ☁️ Vercel Deployment
 
-- **3D Graphics**: Three.js (WebGL Renderer, PCFSoftShadowMap, ACESFilmicToneMapping)
-- **Audio Synthesizer**: Web Audio API (Oscillators, BiquadFilters, GainNodes)
-- **Voice AI**: Web Speech API (`SpeechRecognition` & `SpeechSynthesis`)
-- **Build Tool**: Vite
-- **Language**: JavaScript (ESNext Modules), HTML5, CSS3
+This repository is pre-configured for Vercel deployment:
+- **Build Command**: `vite build`
+- **Output Directory**: `dist`
 
 ---
 
