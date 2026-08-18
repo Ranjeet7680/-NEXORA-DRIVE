@@ -36,33 +36,32 @@ export class TerrainManager {
 
     // Flatten near central ring roads
     const distFromOrigin = Math.sqrt(x * x + z * z);
-    if (distFromOrigin < 250) return 0; // Flat central hub
+    if (distFromOrigin < 280) return 0; // Flat central hub & highway
 
     // North-East: Mountains (High steep peaks)
     if (nx > 0.1 && nz < -0.1) {
-      const hill1 = Math.sin(x * 0.015) * Math.cos(z * 0.015) * 60;
-      const hill2 = Math.sin(x * 0.03 + z * 0.03) * 35;
+      const hill1 = Math.sin(x * 0.015) * Math.cos(z * 0.015) * 55;
+      const hill2 = Math.sin(x * 0.03 + z * 0.03) * 30;
       return Math.max(0, hill1 + hill2);
     }
 
     // South-East: Ice Hills (Rolling snowy mountains)
     if (nx > 0.1 && nz > 0.1) {
-      const hill = Math.sin(x * 0.012) * Math.sin(z * 0.012) * 45;
+      const hill = Math.sin(x * 0.012) * Math.sin(z * 0.012) * 40;
       return Math.max(0, hill);
     }
 
-    // North-West: Forest (Gentle hills and dirt paths)
+    // North-West: Forest (Gentle hills)
     if (nx < -0.1 && nz < -0.1) {
-      return Math.sin(x * 0.02) * Math.cos(z * 0.02) * 15;
+      return Math.max(0, Math.sin(x * 0.02) * Math.cos(z * 0.02) * 15);
     }
 
-    // South-West: River & Beach (Depressed basin for water)
+    // South-West: River & Beach Basin
     if (nx < -0.1 && nz > 0.1) {
-      const basin = -12 + Math.sin(x * 0.01) * 6;
+      const basin = -10 + Math.sin(x * 0.01) * 5;
       return Math.min(2, basin);
     }
 
-    // City Area (Central East): Flat ground
     return 0;
   }
 
@@ -79,28 +78,31 @@ export class TerrainManager {
   }
 
   createTerrainGeometry() {
+    // Create PlaneGeometry lying on XY plane
     const geo = new THREE.PlaneGeometry(this.size, this.size, this.segments, this.segments);
-    geo.rotateX(-Math.PI / 2);
 
     const pos = geo.attributes.position;
     const colors = new Float32Array(pos.count * 3);
 
-    const colorCity = new THREE.Color(0x3a4046);
-    const colorForest = new THREE.Color(0x2a5028);
-    const colorMountain = new THREE.Color(0x605d58);
-    const colorRiver = new THREE.Color(0xd2b48c); // Sand beach
-    const colorIce = new THREE.Color(0xe6f2ff);   // Snow
+    const colorCity = new THREE.Color(0x404850);
+    const colorForest = new THREE.Color(0x345e32);
+    const colorMountain = new THREE.Color(0x6e6a62);
+    const colorRiver = new THREE.Color(0xdfc299); // Sand beach
+    const colorIce = new THREE.Color(0xeef6ff);   // Snow
 
     for (let i = 0; i < pos.count; i++) {
       const vx = pos.getX(i);
-      const vz = pos.getZ(i);
+      const vy = pos.getY(i); // In unrotated plane, Y becomes -Z after rotation!
 
-      const vy = this.getHeightAt(vx, vz);
-      pos.setY(i, vy);
-      this.heightData[i] = vy;
+      const worldX = vx;
+      const worldZ = -vy;
 
-      // Vertex color blending based on biome and elevation
-      const biome = this.getBiomeAt(vx, vz);
+      const height = this.getHeightAt(worldX, worldZ);
+      pos.setZ(i, height); // Height set on Z before rotation
+      this.heightData[i] = height;
+
+      // Vertex colors
+      const biome = this.getBiomeAt(worldX, worldZ);
       let c = colorCity;
       if (biome === BIOMES.FOREST) c = colorForest;
       else if (biome === BIOMES.MOUNTAINS) c = colorMountain;
@@ -112,13 +114,16 @@ export class TerrainManager {
       colors[i * 3 + 2] = c.b;
     }
 
+    // Now rotate plane so XY becomes XZ ground plane
+    geo.rotateX(-Math.PI / 2);
     geo.computeVertexNormals();
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const mat = new THREE.MeshStandardMaterial({
       vertexColors: true,
-      roughness: 0.85,
-      metalness: 0.1
+      roughness: 0.8,
+      metalness: 0.15,
+      flatShading: false
     });
 
     this.terrainMesh = new THREE.Mesh(geo, mat);
@@ -127,102 +132,109 @@ export class TerrainManager {
   }
 
   createRoadNetwork() {
-    const roadMat = new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.6 });
-    const iceRoadMat = new THREE.MeshStandardMaterial({ color: 0xaaccee, roughness: 0.1, metalness: 0.5 });
-    const dirtRoadMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
+    const roadMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2e, roughness: 0.5 });
     const lineMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
 
-    // Main Outer Ring Highway connecting all 5 biomes
-    const ringGeo = new THREE.RingGeometry(550, 580, 64);
+    // Main Outer Ring Highway (Radius 565, Width 30)
+    const ringGeo = new THREE.RingGeometry(550, 580, 128);
     ringGeo.rotateX(-Math.PI / 2);
     const ringMesh = new THREE.Mesh(ringGeo, roadMat);
-    ringMesh.position.y = 0.1;
+    ringMesh.position.y = 0.25;
     ringMesh.receiveShadow = true;
     this.scene.add(ringMesh);
 
-    // Inner Grid Roads in City Biome
+    // Yellow Center Line Ring
+    const lineGeo = new THREE.RingGeometry(564, 566, 128);
+    lineGeo.rotateX(-Math.PI / 2);
+    const lineMesh = new THREE.Mesh(lineGeo, lineMat);
+    lineMesh.position.y = 0.27;
+    this.scene.add(lineMesh);
+
+    // City Grid Asphalt Roads
     for (let x = -300; x <= 300; x += 150) {
-      const roadGeo = new THREE.PlaneGeometry(16, 600);
+      const roadGeo = new THREE.PlaneGeometry(18, 600);
       roadGeo.rotateX(-Math.PI / 2);
       const road = new THREE.Mesh(roadGeo, roadMat);
-      road.position.set(x, 0.12, 0);
+      road.position.set(x, 0.26, 0);
       road.receiveShadow = true;
       this.scene.add(road);
     }
     for (let z = -300; z <= 300; z += 150) {
-      const roadGeo = new THREE.PlaneGeometry(600, 16);
+      const roadGeo = new THREE.PlaneGeometry(600, 18);
       roadGeo.rotateX(-Math.PI / 2);
       const road = new THREE.Mesh(roadGeo, roadMat);
-      road.position.set(0, 0.12, z);
+      road.position.set(0, 0.26, z);
       road.receiveShadow = true;
       this.scene.add(road);
     }
 
-    // Mountain Road Pass (Elevated winding path)
-    const mountainRoadGeo = new THREE.PlaneGeometry(24, 700);
+    // Mountain Road Pass
+    const mountainRoadGeo = new THREE.PlaneGeometry(26, 750);
     mountainRoadGeo.rotateX(-Math.PI / 2);
     mountainRoadGeo.rotateY(Math.PI / 4);
     const mountainRoad = new THREE.Mesh(mountainRoadGeo, roadMat);
-    mountainRoad.position.set(450, 20, -450);
+    mountainRoad.position.set(450, 0.28, -450);
     mountainRoad.receiveShadow = true;
     this.scene.add(mountainRoad);
 
-    // Ice Mountain Highway (Slippery surface)
-    const iceRoadGeo = new THREE.PlaneGeometry(24, 700);
+    // Ice Mountain Highway
+    const iceRoadMat = new THREE.MeshStandardMaterial({ color: 0x99ccff, roughness: 0.15, metalness: 0.4 });
+    const iceRoadGeo = new THREE.PlaneGeometry(26, 750);
     iceRoadGeo.rotateX(-Math.PI / 2);
     iceRoadGeo.rotateY(-Math.PI / 4);
     const iceRoad = new THREE.Mesh(iceRoadGeo, iceRoadMat);
-    iceRoad.position.set(450, 15, 450);
+    iceRoad.position.set(450, 0.28, 450);
     iceRoad.receiveShadow = true;
     this.scene.add(iceRoad);
 
-    // Forest Dirt Track
-    const dirtGeo = new THREE.PlaneGeometry(20, 650);
+    // Forest Dirt Road
+    const dirtMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
+    const dirtGeo = new THREE.PlaneGeometry(22, 700);
     dirtGeo.rotateX(-Math.PI / 2);
     dirtGeo.rotateY(-Math.PI / 3);
-    const dirtRoad = new THREE.Mesh(dirtGeo, dirtRoadMat);
-    dirtRoad.position.set(-450, 5, -450);
+    const dirtRoad = new THREE.Mesh(dirtGeo, dirtMat);
+    dirtRoad.position.set(-450, 0.28, -450);
     dirtRoad.receiveShadow = true;
     this.scene.add(dirtRoad);
   }
 
   createWaterBody() {
-    // Water plane at Y = -4 in River/Beach quadrant
-    const waterGeo = new THREE.PlaneGeometry(1000, 1000);
+    // Animated River & Beach Water
+    const waterGeo = new THREE.PlaneGeometry(900, 900);
     waterGeo.rotateX(-Math.PI / 2);
     const waterMat = new THREE.MeshStandardMaterial({
-      color: 0x0066aa,
+      color: 0x0077be,
       roughness: 0.1,
       metalness: 0.8,
       transparent: true,
-      opacity: 0.8
+      opacity: 0.85
     });
     this.waterMesh = new THREE.Mesh(waterGeo, waterMat);
-    this.waterMesh.position.set(-500, -3.5, 500);
+    this.waterMesh.position.set(-450, 0.1, 450);
     this.scene.add(this.waterMesh);
 
-    // Wooden Bridge across River
-    const bridgeGeo = new THREE.BoxGeometry(30, 4, 180);
-    const bridgeMat = new THREE.MeshStandardMaterial({ color: 0x5a3d28, roughness: 0.9 });
+    // Wooden Bridge
+    const bridgeGeo = new THREE.BoxGeometry(32, 4, 180);
+    const bridgeMat = new THREE.MeshStandardMaterial({ color: 0x6e4a2d, roughness: 0.8 });
     const bridge = new THREE.Mesh(bridgeGeo, bridgeMat);
-    bridge.position.set(-500, 1.5, 300);
+    bridge.position.set(-450, 2.0, 300);
+    bridge.castShadow = true;
     this.scene.add(bridge);
   }
 
   createCityBuildings() {
-    const buildingMat1 = new THREE.MeshStandardMaterial({ color: 0x4a5568, roughness: 0.3 });
-    const buildingMat2 = new THREE.MeshStandardMaterial({ color: 0x2d3748, roughness: 0.2 });
-    const buildingMat3 = new THREE.MeshStandardMaterial({ color: 0x718096, roughness: 0.4 });
-    const windowMat = new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: 0xaaaa66, emissiveIntensity: 0.4 });
+    const buildingMat1 = new THREE.MeshStandardMaterial({ color: 0x526075, roughness: 0.3 });
+    const buildingMat2 = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.2 });
+    const buildingMat3 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.4 });
+    const windowMat = new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: 0xffffaa, emissiveIntensity: 0.5 });
 
-    // Procedural skyscrapers in City quadrant
     for (let x = -350; x <= -50; x += 100) {
       for (let z = -350; z <= -50; z += 100) {
-        if (Math.abs(x % 150) < 20 || Math.abs(z % 150) < 20) continue; // Leave room for roads
+        if (Math.abs(x % 150) < 25 || Math.abs(z % 150) < 25) continue;
 
-        const height = 40 + Math.random() * 90;
-        const width = 30 + Math.random() * 20;
-        const depth = 30 + Math.random() * 20;
+        const height = 50 + Math.random() * 100;
+        const width = 32 + Math.random() * 18;
+        const depth = 32 + Math.random() * 18;
 
         const geo = new THREE.BoxGeometry(width, height, depth);
         const mats = [buildingMat1, buildingMat2, buildingMat3];
@@ -235,8 +247,8 @@ export class TerrainManager {
         this.scene.add(bMesh);
         this.buildings.push(bMesh);
 
-        // Window glow strips
-        const winGeo = new THREE.BoxGeometry(width + 0.2, height * 0.8, depth + 0.2);
+        // Window strips
+        const winGeo = new THREE.BoxGeometry(width + 0.3, height * 0.75, depth + 0.3);
         const winMesh = new THREE.Mesh(winGeo, windowMat);
         winMesh.position.set(x, height * 0.5, z);
         this.scene.add(winMesh);
@@ -245,77 +257,74 @@ export class TerrainManager {
   }
 
   createForestVegetation() {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3d2817 });
-    const pineLeavesMat = new THREE.MeshStandardMaterial({ color: 0x1e3a1e, roughness: 0.8 });
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a2e1b });
+    const pineLeavesMat = new THREE.MeshStandardMaterial({ color: 0x1c3d1c, roughness: 0.7 });
 
-    const trunkGeo = new THREE.CylinderGeometry(0.5, 0.8, 4, 8);
-    const leavesGeo = new THREE.ConeGeometry(5, 12, 8);
+    const trunkGeo = new THREE.CylinderGeometry(0.6, 0.9, 5, 8);
+    const leavesGeo = new THREE.ConeGeometry(6, 14, 8);
 
-    // Populate Forest quadrant
-    for (let i = 0; i < 180; i++) {
-      const x = -100 - Math.random() * 700;
-      const z = -100 - Math.random() * 700;
+    for (let i = 0; i < 150; i++) {
+      const x = -150 - Math.random() * 650;
+      const z = -150 - Math.random() * 650;
       const y = this.getHeightAt(x, z);
 
       if (y < 0) continue;
 
       const treeGroup = new THREE.Group();
       const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-      trunk.position.y = 2;
+      trunk.position.y = 2.5;
       const leaves = new THREE.Mesh(leavesGeo, pineLeavesMat);
-      leaves.position.y = 9;
+      leaves.position.y = 11;
 
       treeGroup.add(trunk);
       treeGroup.add(leaves);
       treeGroup.position.set(x, y, z);
-
       treeGroup.castShadow = true;
+
       this.scene.add(treeGroup);
       this.trees.push(treeGroup);
     }
   }
 
   createMountainElements() {
-    // Rock boulders & Guardrails in Mountain quadrant
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.9 });
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x5a5652, roughness: 0.8 });
     for (let i = 0; i < 40; i++) {
       const x = 200 + Math.random() * 600;
       const z = -200 - Math.random() * 600;
       const y = this.getHeightAt(x, z);
 
-      const rGeo = new THREE.DodecahedronGeometry(3 + Math.random() * 6, 1);
+      const rGeo = new THREE.DodecahedronGeometry(4 + Math.random() * 7, 1);
       const rock = new THREE.Mesh(rGeo, rockMat);
       rock.position.set(x, y + 2, z);
       rock.castShadow = true;
       this.scene.add(rock);
     }
 
-    // Mountain Tunnel Arch
-    const tunnelGeo = new THREE.BoxGeometry(40, 25, 60);
-    const tunnelMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 });
+    // Tunnel Arch
+    const tunnelGeo = new THREE.BoxGeometry(45, 30, 70);
+    const tunnelMat = new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.9 });
     const tunnel = new THREE.Mesh(tunnelGeo, tunnelMat);
     tunnel.position.set(450, 15, -300);
     this.scene.add(tunnel);
   }
 
   createIceElements() {
-    // Snow-laden pine trees & Ice crystals in Ice Hills quadrant
-    const snowLeavesMat = new THREE.MeshStandardMaterial({ color: 0xe6f2ff, roughness: 0.7 });
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3d2817 });
+    const snowLeavesMat = new THREE.MeshStandardMaterial({ color: 0xeef6ff, roughness: 0.6 });
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a2e1b });
 
-    const trunkGeo = new THREE.CylinderGeometry(0.5, 0.8, 4, 8);
-    const leavesGeo = new THREE.ConeGeometry(5, 12, 8);
+    const trunkGeo = new THREE.CylinderGeometry(0.6, 0.9, 5, 8);
+    const leavesGeo = new THREE.ConeGeometry(6, 14, 8);
 
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < 100; i++) {
       const x = 200 + Math.random() * 600;
       const z = 200 + Math.random() * 600;
       const y = this.getHeightAt(x, z);
 
       const treeGroup = new THREE.Group();
       const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-      trunk.position.y = 2;
+      trunk.position.y = 2.5;
       const leaves = new THREE.Mesh(leavesGeo, snowLeavesMat);
-      leaves.position.y = 9;
+      leaves.position.y = 11;
 
       treeGroup.add(trunk);
       treeGroup.add(leaves);
@@ -325,24 +334,23 @@ export class TerrainManager {
   }
 
   createStreetLightsAndSigns() {
-    const poleMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-    const lampMat = new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: 0xffff88, emissiveIntensity: 1.0 });
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
+    const lampMat = new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: 0xffffaa, emissiveIntensity: 1.2 });
 
-    const poleGeo = new THREE.CylinderGeometry(0.15, 0.15, 8, 8);
-    const lampGeo = new THREE.SphereGeometry(0.6, 12, 12);
+    const poleGeo = new THREE.CylinderGeometry(0.18, 0.18, 9, 8);
+    const lampGeo = new THREE.SphereGeometry(0.7, 12, 12);
 
-    // Streetlights along City roads
     for (let x = -300; x <= 300; x += 150) {
       for (let z = -300; z <= 300; z += 150) {
         const lightGroup = new THREE.Group();
         const pole = new THREE.Mesh(poleGeo, poleMat);
-        pole.position.y = 4;
+        pole.position.y = 4.5;
         const lamp = new THREE.Mesh(lampGeo, lampMat);
-        lamp.position.set(0, 8, 0);
+        lamp.position.set(0, 9, 0);
 
         lightGroup.add(pole);
         lightGroup.add(lamp);
-        lightGroup.position.set(x + 10, 0, z + 10);
+        lightGroup.position.set(x + 12, 0, z + 12);
         this.scene.add(lightGroup);
       }
     }

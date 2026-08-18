@@ -33,12 +33,12 @@ export const VEHICLE_CONFIGS = {
     suspensionStiffness: 25,
     suspensionDamping: 4,
     cameraOffsets: {
-      fpv: { x: -0.35, y: 1.15, z: 0.1 },
-      dash: { x: 0.0, y: 1.05, z: 0.5 },
-      wheel: { x: -0.35, y: 1.05, z: 0.4 },
-      hood: { x: 0.0, y: 1.0, z: 1.8 },
-      chase: { distance: 5.5, height: 2.2 },
-      cinematic: { distance: 10.0, height: 3.5 }
+      fpv: { x: -0.35, y: 1.25, z: -0.1 },   // Driver seat looking forward
+      dash: { x: 0.0, y: 1.15, z: 0.3 },     // Dashboard
+      wheel: { x: -0.35, y: 1.15, z: 0.25 }, // Steering wheel POV
+      hood: { x: 0.0, y: 1.0, z: 1.8 },      // Front hood
+      chase: { distance: 6.0, height: 2.4 },
+      cinematic: { distance: 11.0, height: 3.8 }
     },
     dimensions: { length: 4.4, width: 1.9, height: 1.35 },
     wheelRadius: 0.35,
@@ -59,12 +59,12 @@ export const VEHICLE_CONFIGS = {
     suspensionStiffness: 40,
     suspensionDamping: 6,
     cameraOffsets: {
-      fpv: { x: -0.7, y: 2.1, z: 3.2 },
-      dash: { x: 0.0, y: 2.0, z: 3.6 },
-      wheel: { x: -0.7, y: 1.95, z: 3.5 },
+      fpv: { x: -0.7, y: 2.2, z: 2.8 },
+      dash: { x: 0.0, y: 2.1, z: 3.2 },
+      wheel: { x: -0.7, y: 2.05, z: 3.0 },
       hood: { x: 0.0, y: 1.8, z: 4.8 },
-      chase: { distance: 11.0, height: 4.0 },
-      cinematic: { distance: 16.0, height: 6.0 }
+      chase: { distance: 12.0, height: 4.2 },
+      cinematic: { distance: 17.0, height: 6.0 }
     },
     dimensions: { length: 10.5, width: 2.6, height: 3.2 },
     wheelRadius: 0.55,
@@ -85,12 +85,12 @@ export const VEHICLE_CONFIGS = {
     suspensionStiffness: 18,
     suspensionDamping: 3,
     cameraOffsets: {
-      fpv: { x: 0.0, y: 1.25, z: -0.1 },
-      dash: { x: 0.0, y: 1.15, z: 0.25 },
-      wheel: { x: 0.0, y: 1.1, z: 0.15 },
+      fpv: { x: 0.0, y: 1.35, z: -0.1 },
+      dash: { x: 0.0, y: 1.2, z: 0.2 },
+      wheel: { x: 0.0, y: 1.15, z: 0.1 },
       hood: { x: 0.0, y: 0.9, z: 0.8 },
-      chase: { distance: 4.2, height: 1.8 },
-      cinematic: { distance: 8.0, height: 2.8 }
+      chase: { distance: 4.5, height: 2.0 },
+      cinematic: { distance: 8.5, height: 3.0 }
     },
     dimensions: { length: 2.1, width: 0.8, height: 1.2 },
     wheelRadius: 0.32,
@@ -111,12 +111,12 @@ export const VEHICLE_CONFIGS = {
     suspensionStiffness: 45,
     suspensionDamping: 7,
     cameraOffsets: {
-      fpv: { x: -0.85, y: 2.6, z: 1.8 },
-      dash: { x: 0.0, y: 2.5, z: 2.2 },
-      wheel: { x: -0.85, y: 2.45, z: 2.1 },
+      fpv: { x: -0.85, y: 2.7, z: 1.5 },
+      dash: { x: 0.0, y: 2.6, z: 1.9 },
+      wheel: { x: -0.85, y: 2.55, z: 1.8 },
       hood: { x: 0.0, y: 2.2, z: 3.2 },
-      chase: { distance: 13.0, height: 4.5 },
-      cinematic: { distance: 18.0, height: 6.5 }
+      chase: { distance: 14.0, height: 4.8 },
+      cinematic: { distance: 19.0, height: 7.0 }
     },
     dimensions: { length: 8.5, width: 2.7, height: 3.6 },
     wheelRadius: 0.6,
@@ -137,12 +137,12 @@ export const VEHICLE_CONFIGS = {
     suspensionStiffness: 24,
     suspensionDamping: 4,
     cameraOffsets: {
-      fpv: { x: -0.35, y: 1.18, z: 0.1 },
-      dash: { x: 0.0, y: 1.08, z: 0.5 },
-      wheel: { x: -0.35, y: 1.08, z: 0.4 },
+      fpv: { x: -0.35, y: 1.25, z: -0.1 },
+      dash: { x: 0.0, y: 1.15, z: 0.3 },
+      wheel: { x: -0.35, y: 1.15, z: 0.25 },
       hood: { x: 0.0, y: 1.0, z: 1.8 },
-      chase: { distance: 5.5, height: 2.2 },
-      cinematic: { distance: 10.0, height: 3.5 }
+      chase: { distance: 6.0, height: 2.4 },
+      cinematic: { distance: 11.0, height: 3.8 }
     },
     dimensions: { length: 4.6, width: 1.9, height: 1.45 },
     wheelRadius: 0.36,
@@ -163,12 +163,12 @@ export const VEHICLE_CONFIGS = {
     suspensionStiffness: 30,
     suspensionDamping: 5,
     cameraOffsets: {
-      fpv: { x: -0.45, y: 1.55, z: 0.2 },
-      dash: { x: 0.0, y: 1.45, z: 0.6 },
-      wheel: { x: -0.45, y: 1.45, z: 0.5 },
+      fpv: { x: -0.45, y: 1.65, z: 0.0 },
+      dash: { x: 0.0, y: 1.55, z: 0.4 },
+      wheel: { x: -0.45, y: 1.55, z: 0.3 },
       hood: { x: 0.0, y: 1.3, z: 2.0 },
-      chase: { distance: 6.2, height: 2.6 },
-      cinematic: { distance: 11.0, height: 4.0 }
+      chase: { distance: 6.8, height: 2.8 },
+      cinematic: { distance: 12.0, height: 4.2 }
     },
     dimensions: { length: 4.8, width: 2.1, height: 1.85 },
     wheelRadius: 0.42,
@@ -189,12 +189,12 @@ export const VEHICLE_CONFIGS = {
     suspensionStiffness: 28,
     suspensionDamping: 4.5,
     cameraOffsets: {
-      fpv: { x: -0.38, y: 1.18, z: 0.1 },
-      dash: { x: 0.0, y: 1.08, z: 0.5 },
-      wheel: { x: -0.38, y: 1.08, z: 0.4 },
+      fpv: { x: -0.38, y: 1.25, z: -0.1 },
+      dash: { x: 0.0, y: 1.15, z: 0.3 },
+      wheel: { x: -0.38, y: 1.15, z: 0.25 },
       hood: { x: 0.0, y: 1.0, z: 1.8 },
-      chase: { distance: 5.6, height: 2.2 },
-      cinematic: { distance: 10.0, height: 3.5 }
+      chase: { distance: 6.0, height: 2.4 },
+      cinematic: { distance: 11.0, height: 3.8 }
     },
     dimensions: { length: 4.7, width: 1.95, height: 1.42 },
     wheelRadius: 0.38,

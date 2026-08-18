@@ -22,18 +22,19 @@ export class VehicleBuilder {
     });
 
     const glassMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x112233,
+      color: 0x88ccff,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.25,
       roughness: 0.1,
-      metalness: 0.9,
-      transmission: 0.6
+      metalness: 0.8,
+      transmission: 0.8,
+      side: THREE.DoubleSide
     });
 
     const darkMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 });
     const chromeMaterial = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.1, metalness: 0.95 });
-    const lightMaterial = new THREE.MeshStandardMaterial({ color: 0xffffcc, emissive: 0xffffaa, emissiveIntensity: 0.8 });
-    const brakeLightMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xcc0000, emissiveIntensity: 0.8 });
+    const lightMaterial = new THREE.MeshStandardMaterial({ color: 0xffffcc, emissive: 0xffffaa, emissiveIntensity: 1.2 });
+    const brakeLightMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xcc0000, emissiveIntensity: 1.2 });
 
     // Chassis Base Group
     const chassis = new THREE.Group();
@@ -63,7 +64,7 @@ export class VehicleBuilder {
 
     // Add Wheels with custom Rim Size (15"-20")
     const rimSizeInches = customUpgrades.rimSize || 17;
-    const rimScale = rimSizeInches / 17; // Scale factor relative to stock 17"
+    const rimScale = rimSizeInches / 17;
     
     const wheels = [];
     const wheelPositions = VehicleBuilder.getWheelPositions(config);
@@ -107,8 +108,8 @@ export class VehicleBuilder {
     }
 
     // Add Headlights (Spotlights)
-    const headlightLeft = new THREE.SpotLight(0xffffff, 3.0, 40, Math.PI / 6, 0.4, 1);
-    const headlightRight = new THREE.SpotLight(0xffffff, 3.0, 40, Math.PI / 6, 0.4, 1);
+    const headlightLeft = new THREE.SpotLight(0xffffff, 3.5, 50, Math.PI / 6, 0.4, 1);
+    const headlightRight = new THREE.SpotLight(0xffffff, 3.5, 50, Math.PI / 6, 0.4, 1);
     
     const headZ = config.dimensions.length * 0.5;
     const headX = config.dimensions.width * 0.35;
@@ -168,40 +169,57 @@ export class VehicleBuilder {
   static buildSedanBody(chassis, config, bodyMat, glassMat, darkMat, chromeMat, lightMat, brakeMat, customUpgrades) {
     const { length, width, height } = config.dimensions;
 
-    // Body
-    const lowerGeo = new THREE.BoxGeometry(width, height * 0.45, length);
+    // Body Lower Chassis
+    const lowerGeo = new THREE.BoxGeometry(width, height * 0.4, length);
     const lowerMesh = new THREE.Mesh(lowerGeo, bodyMat);
-    lowerMesh.position.y = height * 0.45;
+    lowerMesh.position.y = height * 0.35;
     lowerMesh.castShadow = true;
     chassis.add(lowerMesh);
 
-    // Roof
-    const cabinGeo = new THREE.BoxGeometry(width * 0.9, height * 0.5, length * 0.55);
+    // Roof & Pillars
+    const cabinGeo = new THREE.BoxGeometry(width * 0.88, height * 0.45, length * 0.5);
     const cabinMesh = new THREE.Mesh(cabinGeo, bodyMat);
-    cabinMesh.position.set(0, height * 0.85, -length * 0.05);
+    cabinMesh.position.set(0, height * 0.75, -length * 0.08);
     chassis.add(cabinMesh);
 
-    // Windshield
-    const windshieldGeo = new THREE.BoxGeometry(width * 0.86, height * 0.45, length * 0.25);
+    // Windshield Glass
+    const windshieldGeo = new THREE.BoxGeometry(width * 0.85, height * 0.4, 0.05);
     const windshield = new THREE.Mesh(windshieldGeo, glassMat);
-    windshield.position.set(0, height * 0.85, length * 0.15);
+    windshield.position.set(0, height * 0.75, length * 0.17);
     windshield.rotation.x = -0.35;
     chassis.add(windshield);
 
     // Windshield Wiper Mesh
-    const wiperGeo = new THREE.BoxGeometry(width * 0.6, 0.04, 0.04);
+    const wiperGeo = new THREE.BoxGeometry(width * 0.5, 0.03, 0.03);
     const wiperMesh = new THREE.Mesh(wiperGeo, darkMat);
     wiperMesh.name = 'wiperMesh';
-    wiperMesh.position.set(0, height * 0.7, length * 0.22);
+    wiperMesh.position.set(0, height * 0.62, length * 0.22);
     chassis.add(wiperMesh);
+
+    // Headlights Mesh Bulbs
+    const headBulbGeo = new THREE.BoxGeometry(width * 0.22, height * 0.15, 0.1);
+    const headL = new THREE.Mesh(headBulbGeo, lightMat);
+    const headR = new THREE.Mesh(headBulbGeo, lightMat);
+    headL.position.set(-width * 0.32, height * 0.35, length * 0.5);
+    headR.position.set(width * 0.32, height * 0.35, length * 0.5);
+    chassis.add(headL);
+    chassis.add(headR);
+
+    // Brake Lights Mesh Bulbs
+    const brakeL = new THREE.Mesh(headBulbGeo, brakeMat);
+    const brakeR = new THREE.Mesh(headBulbGeo, brakeMat);
+    brakeL.position.set(-width * 0.32, height * 0.4, -length * 0.5);
+    brakeR.position.set(width * 0.32, height * 0.4, -length * 0.5);
+    chassis.add(brakeL);
+    chassis.add(brakeR);
 
     // Modular 3D Spoiler Attachment
     if (customUpgrades.spoiler && customUpgrades.spoiler !== 'none') {
-      const spHeight = customUpgrades.spoiler === 'carbon_wing' ? 0.35 : 0.18;
-      const spGeo = new THREE.BoxGeometry(width * 0.95, 0.06, 0.3);
+      const spHeight = customUpgrades.spoiler === 'carbon_wing' ? 0.3 : 0.15;
+      const spGeo = new THREE.BoxGeometry(width * 0.9, 0.05, 0.25);
       const spMat = customUpgrades.spoiler === 'carbon_wing' ? darkMat : bodyMat;
       const spMesh = new THREE.Mesh(spGeo, spMat);
-      spMesh.position.set(0, height * 0.7 + spHeight, -length * 0.45);
+      spMesh.position.set(0, height * 0.65 + spHeight, -length * 0.45);
       chassis.add(spMesh);
     }
 
@@ -252,16 +270,16 @@ export class VehicleBuilder {
 
     const fpv = config.cameraOffsets.fpv;
 
-    // Dashboard
-    const dashGeo = new THREE.BoxGeometry(config.dimensions.width * 0.85, 0.25, 0.45);
+    // Cockpit Dashboard (positioned below driver line of sight)
+    const dashGeo = new THREE.BoxGeometry(config.dimensions.width * 0.85, 0.2, 0.4);
     const dashMesh = new THREE.Mesh(dashGeo, darkMat);
-    dashMesh.position.set(0, fpv.y - 0.1, fpv.z + 0.35);
+    dashMesh.position.set(0, fpv.y - 0.3, fpv.z + 0.4);
     chassis.add(dashMesh);
 
     // Interactive Steering Wheel Mesh
     const wheelGroup = new THREE.Group();
     wheelGroup.name = 'steeringWheelMesh';
-    wheelGroup.position.set(fpv.x, fpv.y - 0.08, fpv.z + 0.3);
+    wheelGroup.position.set(fpv.x, fpv.y - 0.22, fpv.z + 0.35);
 
     const ringGeo = new THREE.TorusGeometry(0.18, 0.025, 8, 24);
     const ringMesh = new THREE.Mesh(ringGeo, darkMat);
