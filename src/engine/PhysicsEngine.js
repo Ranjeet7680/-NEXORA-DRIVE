@@ -21,11 +21,11 @@ export class PhysicsEngine {
     // Body Motion Roll / Pitch (Weight transfer)
     this.bodyRoll = 0;
     this.bodyPitch = 0;
-    this.damageHealth = 100; // Vehicle condition %
+    this.damageHealth = 100;
 
     // Control Inputs
-    this.inputThrottle = 0;
-    this.inputSteer = 0;
+    this.inputThrottle = 0; // 1 = Gas, -1 = Brake/Reverse
+    this.inputSteer = 0;    // -1 = Left (A/LeftArrow), +1 = Right (D/RightArrow)
     this.inputHandbrake = false;
 
     this.vehicleConfig = null;
@@ -47,9 +47,8 @@ export class PhysicsEngine {
     this.gear = 1;
     this.steeringAngle = 0;
 
-    // Apply Stance Ride Height Offset
-    const rideOffset = (upgrades.rideHeight || 0) * 0.1;
-    this.position.y += rideOffset;
+    const rideOffset = (upgrades.rideHeight || 0) * 0.05;
+    this.position.y = this.terrainManager.getHeightAt(this.position.x, this.position.z) + config.wheelRadius + rideOffset;
   }
 
   update(deltaTime) {
@@ -60,68 +59,73 @@ export class PhysicsEngine {
     this.surfaceFriction = this.currentBiome.friction;
     this.surfaceFriction += (this.upgradeLevels.tires || 0) * 0.08;
 
-    // Damage degradation performance impact
     const damageFactor = Math.max(0.6, this.damageHealth / 100);
 
-    // 2. Engine Torque & Acceleration
+    // 2. Engine Torque & Acceleration / Braking
     const engineBonus = 1.0 + (this.upgradeLevels.engine || 0) * 0.15;
-    const accelTorque = this.vehicleConfig.acceleration * engineBonus * 0.85 * damageFactor;
+    const accelTorque = this.vehicleConfig.acceleration * engineBonus * 0.9 * damageFactor;
 
     let forwardForce = 0;
     if (this.inputThrottle > 0) {
       forwardForce = this.inputThrottle * accelTorque;
     } else if (this.inputThrottle < 0) {
       const brakeBonus = 1.0 + (this.upgradeLevels.brakes || 0) * 0.2;
-      forwardForce = this.inputThrottle * this.vehicleConfig.braking * brakeBonus * 0.8;
+      forwardForce = this.inputThrottle * this.vehicleConfig.braking * brakeBonus * 0.85;
     }
 
     // 3. Handbrake & Drifting
     if (this.inputHandbrake) {
-      forwardForce *= 0.2;
+      forwardForce *= 0.15;
       this.isDrifting = this.speedKmh > 20;
     } else {
       this.isDrifting = (this.surfaceFriction < 0.5 && this.speedKmh > 35 && Math.abs(this.inputSteer) > 0.4);
     }
 
-    // 4. Steering Dynamics with speed-sensitivity
-    const maxSteer = Math.PI / 5;
-    const speedDamping = Math.max(0.3, 1.0 - (this.speedKmh / (this.vehicleConfig.topSpeed * 1.2)));
+    // 4. Steering Dynamics (Speed sensitive damping)
+    const maxSteer = Math.PI / 5; // ~36° max wheel turn
+    const speedDamping = Math.max(0.35, 1.0 - (this.speedKmh / (this.vehicleConfig.topSpeed * 1.2)));
     const targetSteer = this.inputSteer * maxSteer * speedDamping;
     
-    this.steeringAngle += (targetSteer - this.steeringAngle) * Math.min(1.0, deltaTime * this.vehicleConfig.steeringSpeed * 3);
+    // Smooth steering angle interpolation
+    this.steeringAngle += (targetSteer - this.steeringAngle) * Math.min(1.0, deltaTime * this.vehicleConfig.steeringSpeed * 3.5);
 
-    // 5. Angular Velocity & Body Roll/Pitch Simulation
+    // 5. Angular Velocity & Correct Yaw Turn Direction
+    // In Three.js: +Z is forward direction of travel for our vehicle Euler.
+    // When inputSteer > 0 (Right), vehicle must turn RIGHT (yaw angle decreases / rotates clockwise around +Y).
+    // When inputSteer < 0 (Left), vehicle must turn LEFT (yaw angle increases / rotates counter-clockwise around +Y).
     const turnRadius = this.vehicleConfig.dimensions.length / Math.tan(Math.max(0.01, Math.abs(this.steeringAngle)));
-    const forwardSpeed = this.velocity.z;
+    const forwardSpeed = this.velocity.length();
 
-    const driftSlipMultiplier = this.isDrifting ? (1.5 / Math.max(0.2, this.surfaceFriction)) : 1.0;
-    const yawRate = (forwardSpeed / turnRadius) * Math.sign(this.steeringAngle) * driftSlipMultiplier;
+    const driftSlipMultiplier = this.isDrifting ? (1.6 / Math.max(0.2, this.surfaceFriction)) : 1.0;
     
-    this.angularVelocity += (yawRate - this.angularVelocity) * Math.min(1.0, deltaTime * 8.0);
+    // Correct Yaw direction formula: inputSteer > 0 -> turn right (-yaw); inputSteer < 0 -> turn left (+yaw)
+    const targetYawRate = -Math.sign(this.steeringAngle) * (forwardSpeed / turnRadius) * driftSlipMultiplier;
+    
+    this.angularVelocity += (targetYawRate - this.angularVelocity) * Math.min(1.0, deltaTime * 8.0);
     this.rotation.y += this.angularVelocity * deltaTime;
 
     // Body Roll on cornering
-    const targetRoll = -this.steeringAngle * (this.speedKmh / 150) * 0.2;
+    const targetRoll = -this.steeringAngle * (this.speedKmh / 140) * 0.25;
     this.bodyRoll += (targetRoll - this.bodyRoll) * Math.min(1.0, deltaTime * 6.0);
     this.rotation.z = this.bodyRoll;
 
     // Body Pitch on braking/accel
-    const targetPitch = -this.inputThrottle * 0.05;
+    const targetPitch = -this.inputThrottle * 0.06;
     this.bodyPitch += (targetPitch - this.bodyPitch) * Math.min(1.0, deltaTime * 6.0);
     this.rotation.x = this.bodyPitch;
 
-    // 6. Linear Acceleration & Surface Friction
+    // 6. Linear Acceleration & Vector Movement
     const forwardDir = new THREE.Vector3(0, 0, 1).applyEuler(this.rotation);
     const accelVec = forwardDir.clone().multiplyScalar((forwardForce / (this.vehicleConfig.mass * 0.001)) * deltaTime);
 
-    const gripFactor = this.isDrifting ? 0.3 * this.surfaceFriction : 0.92 * this.surfaceFriction;
+    const gripFactor = this.isDrifting ? 0.25 * this.surfaceFriction : 0.92 * this.surfaceFriction;
     
     const currentForwardSpeed = this.velocity.dot(forwardDir);
     const sideDir = new THREE.Vector3(1, 0, 0).applyEuler(this.rotation);
     const currentSideSpeed = this.velocity.dot(sideDir);
 
-    const newForwardSpeed = (currentForwardSpeed + accelVec.dot(forwardDir)) * 0.995;
-    const newSideSpeed = currentSideSpeed * (1.0 - gripFactor * Math.min(1.0, deltaTime * 10));
+    const newForwardSpeed = (currentForwardSpeed + accelVec.dot(forwardDir)) * 0.994;
+    const newSideSpeed = currentSideSpeed * (1.0 - gripFactor * Math.min(1.0, deltaTime * 10.0));
 
     this.velocity.copy(forwardDir.clone().multiplyScalar(newForwardSpeed))
       .add(sideDir.clone().multiplyScalar(newSideSpeed));
@@ -135,19 +139,19 @@ export class PhysicsEngine {
     // Position Update
     this.position.addScaledVector(this.velocity, deltaTime);
 
-    // Ground Height
+    // Ground Height Snapping (Vehicle smoothly sits on road/terrain surface)
     const groundY = this.terrainManager.getHeightAt(this.position.x, this.position.z);
     const targetY = groundY + this.vehicleConfig.wheelRadius + ((this.upgradeLevels.rideHeight || 0) * 0.05);
-    this.position.y += (targetY - this.position.y) * Math.min(1.0, deltaTime * 12.0);
+    this.position.y += (targetY - this.position.y) * Math.min(1.0, deltaTime * 14.0);
 
-    // Sync Mesh
+    // Sync 3D Mesh
     this.vehicleMesh.position.copy(this.position);
     this.vehicleMesh.rotation.copy(this.rotation);
 
     // Steering Wheel Mesh Sync
     const swMesh = this.vehicleMesh.userData.steeringWheelMesh;
     if (swMesh) {
-      swMesh.rotation.z = -this.steeringAngle * 2.5;
+      swMesh.rotation.z = -this.steeringAngle * 2.8;
     }
 
     // Front Wheels Rotation Sync
@@ -160,6 +164,7 @@ export class PhysicsEngine {
       });
     }
 
+    // Speedometer (km/h)
     this.speedKmh = Math.round(Math.abs(currentForwardSpeed) * 3.6);
     this.updateRpmAndGear();
   }
