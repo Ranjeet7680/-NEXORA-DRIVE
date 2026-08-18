@@ -9,13 +9,16 @@ export const BIOMES = {
 };
 
 export const RADIO_STATIONS = [
-  { id: 'nexora_fm', name: 'NEXORA FM', genre: '80s Synthwave', frequency: '98.5 FM', icon: '🌆' },
-  { id: 'city_beats', name: 'City Beats', genre: 'Cyber Electro', frequency: '102.1 FM', icon: '⚡' },
-  { id: 'road_trip', name: 'Road Trip Radio', genre: 'Pop / Rock Chords', frequency: '94.3 FM', icon: '🎸' },
-  { id: 'mountain_fm', name: 'Mountain FM', genre: 'Acoustic Ambient', frequency: '88.7 FM', icon: '🏔️' },
-  { id: 'night_drive', name: 'Night Drive', genre: 'Deep Chillwave', frequency: '105.9 FM', icon: '🌙' },
-  { id: 'chill_drive', name: 'Chill Drive', genre: 'Lo-Fi Beats', frequency: '91.1 FM', icon: '☕' },
-  { id: 'racing_radio', name: 'Racing Radio', genre: 'High Energy Drum & Bass', frequency: '107.7 FM', icon: '🏁' }
+  { id: 'ranjeet_kumar', name: 'Ranjeet Kumar', genre: 'Desi Vibe', frequency: '98.5 FM', icon: '🎧', url: '/audio/Ranjeet_Kumar.mp3' },
+  { id: 'thari_jindagi_1', name: 'थारी जिंदगी म्हारी मौज (Remix)', genre: 'Haryanvi Hits', frequency: '102.1 FM', icon: '🔥', url: '/audio/Thari_Jindagi_Mhari_Mauj_1.mp3' },
+  { id: 'thari_jindagi', name: 'थारी जिंदगी म्हारी मौज', genre: 'Haryanvi Hits', frequency: '94.3 FM', icon: '🎵', url: '/audio/Thari_Jindagi_Mhari_Mauj.mp3' },
+  { id: 'aryan_bhai_shaadi', name: 'Aryan Bhai Ki Shaadi', genre: 'Wedding Beats', frequency: '88.7 FM', icon: '🎺', url: '/audio/Aryan_Bhai_Ki_Shaadi.mp3' },
+  { id: 'dhanbad_dreams_1', name: 'Dhanbad Dreams (Vibe)', genre: 'Desi Hip Hop', frequency: '105.9 FM', icon: '🌙', url: '/audio/Dhanbad_Dreams_1.mp3' },
+  { id: 'dhanbad_dreams', name: 'Dhanbad Dreams', genre: 'Desi Hip Hop', frequency: '91.1 FM', icon: '🏙️', url: '/audio/Dhanbad_Dreams.mp3' },
+  { id: 'ranjeet_vibe_1', name: 'Ranjeet Ka Vibe (Dubstep)', genre: 'Bass Boosted', frequency: '107.7 FM', icon: '🔊', url: '/audio/Ranjeet_Ka_Vibe_1.mp3' },
+  { id: 'ranjeet_vibe', name: 'Ranjeet Ka Vibe', genre: 'Desi Beats', frequency: '99.9 FM', icon: '⚡', url: '/audio/Ranjeet_Ka_Vibe.mp3' },
+  { id: 'ranjeet_kumar_1', name: 'Ranjeet Kumar (Extended)', genre: 'Desi Vibe', frequency: '104.5 FM', icon: '🎤', url: '/audio/Ranjeet_Kumar_1.mp3' },
+  { id: 'aryan_shaadi_1', name: 'Aryan Bhai Ki Shaadi (Celebration)', genre: 'Party Beats', frequency: '96.3 FM', icon: '🎉', url: '/audio/Aryan_Bhai_Ki_Shaadi_1.mp3' }
 ];
 
 export const VEHICLE_CONFIGS = {
@@ -33,10 +36,10 @@ export const VEHICLE_CONFIGS = {
     suspensionStiffness: 25,
     suspensionDamping: 4,
     cameraOffsets: {
-      fpv: { x: -0.35, y: 1.25, z: -0.1 },   // Driver seat looking forward
-      dash: { x: 0.0, y: 1.15, z: 0.3 },     // Dashboard
-      wheel: { x: -0.35, y: 1.15, z: 0.25 }, // Steering wheel POV
-      hood: { x: 0.0, y: 1.0, z: 1.8 },      // Front hood
+      fpv: { x: -0.35, y: 1.25, z: -0.1 },
+      dash: { x: 0.0, y: 1.15, z: 0.3 },
+      wheel: { x: -0.35, y: 1.15, z: 0.25 },
+      hood: { x: 0.0, y: 1.0, z: 1.8 },
       chase: { distance: 6.0, height: 2.4 },
       cinematic: { distance: 11.0, height: 3.8 }
     },

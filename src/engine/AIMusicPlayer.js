@@ -1,4 +1,4 @@
-// In-Car Radio Station Music Player for NEXORA DRIVE
+// Real MP3 & Radio Station Audio Player for NEXORA DRIVE
 
 import { RADIO_STATIONS } from '../config.js';
 
@@ -7,12 +7,13 @@ export class AIMusicPlayer {
     this.audioEngine = audioEngine;
     this.currentStationIndex = 0;
     this.isPlaying = false;
-    this.volume = 0.5;
+    this.volume = 0.6;
 
-    this.musicOsc1 = null;
-    this.musicOsc2 = null;
-    this.musicGain = null;
+    this.audioElement = new Audio();
+    this.audioElement.loop = true;
+
     this.loopTimer = null;
+    this.musicGain = null;
   }
 
   getCurrentStation() {
@@ -24,13 +25,13 @@ export class AIMusicPlayer {
     if (idx !== -1) {
       this.currentStationIndex = idx;
     }
-    this.startSynthLoop();
+    this.startTrack();
   }
 
   nextStation() {
     this.currentStationIndex = (this.currentStationIndex + 1) % RADIO_STATIONS.length;
     if (this.isPlaying) {
-      this.startSynthLoop();
+      this.startTrack();
     }
     return this.getCurrentStation();
   }
@@ -38,11 +39,43 @@ export class AIMusicPlayer {
   togglePlay() {
     this.isPlaying = !this.isPlaying;
     if (this.isPlaying) {
-      this.startSynthLoop();
+      this.startTrack();
     } else {
-      this.stopSynthLoop();
+      this.stopTrack();
     }
     return this.isPlaying;
+  }
+
+  startTrack() {
+    this.stopTrack();
+    this.isPlaying = true;
+    const station = this.getCurrentStation();
+
+    if (station && station.url) {
+      this.audioElement.src = station.url;
+      this.audioElement.volume = this.volume;
+      this.audioElement.play().catch(err => {
+        console.warn('Audio playback error, falling back to synth:', err);
+        this.startSynthLoop();
+      });
+    } else {
+      this.startSynthLoop();
+    }
+  }
+
+  stopTrack() {
+    if (this.audioElement) {
+      this.audioElement.pause();
+    }
+    this.stopSynthLoop();
+    this.isPlaying = false;
+  }
+
+  setVolume(vol) {
+    this.volume = Math.max(0, Math.min(1, vol));
+    if (this.audioElement) {
+      this.audioElement.volume = this.volume;
+    }
   }
 
   startSynthLoop() {
@@ -57,12 +90,7 @@ export class AIMusicPlayer {
 
     const station = this.getCurrentStation();
 
-    // Procedural Synth Chord Progression Loop
-    let chordSeq = [220, 261, 329, 392]; // A minor
-    if (station.id === 'city_beats') chordSeq = [174, 220, 261, 349];
-    else if (station.id === 'road_trip') chordSeq = [261, 329, 392, 523];
-    else if (station.id === 'night_drive') chordSeq = [146, 174, 220, 293];
-
+    let chordSeq = [220, 261, 329, 392];
     let noteIdx = 0;
     this.loopTimer = setInterval(() => {
       if (!this.isPlaying || !ctx) return;
@@ -73,7 +101,7 @@ export class AIMusicPlayer {
       const osc = ctx.createOscillator();
       const noteGain = ctx.createGain();
 
-      osc.type = station.id === 'chill_drive' ? 'sine' : 'sawtooth';
+      osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, ctx.currentTime);
 
       noteGain.gain.setValueAtTime(this.volume * 0.15, ctx.currentTime);
@@ -95,6 +123,5 @@ export class AIMusicPlayer {
     if (this.musicGain && this.audioEngine.ctx) {
       this.musicGain.gain.setTargetAtTime(0, this.audioEngine.ctx.currentTime, 0.1);
     }
-    this.isPlaying = false;
   }
 }
