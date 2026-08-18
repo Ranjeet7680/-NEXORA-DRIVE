@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>NEXORA DRIVE — First-Person Open-World Driving Simulator</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;800;900&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Exo 2', sans-serif;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #050b14;
+      color: #ffffff;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* AI Loading Screen Overlay */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.5s ease;
+    }
+
+    .loading-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loading-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.65) contrast(1.1);
+    }
+
+    .loading-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 600px;
+      padding: 30px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 20px;
+      box-shadow: 0 0 50px rgba(0, 240, 255, 0.2);
+    }
+
+    .game-logo h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      background: linear-gradient(90deg, #00f0ff, #7000ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .game-logo p {
+      font-size: 0.95rem;
+      letter-spacing: 3px;
+      color: #94a3b8;
+      margin-bottom: 25px;
+    }
+
+    .status-message {
+      font-size: 0.9rem;
+      color: #00f0ff;
+      margin-bottom: 12px;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      border: 1px solid rgba(0, 240, 255, 0.3);
+    }
+
+    .progress-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #00f0ff, #00ffcc);
+      box-shadow: 0 0 15px #00f0ff;
+      transition: width 0.15s ease;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    .start-btn {
+      margin-top: 20px;
+      width: 100%;
+      padding: 16px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #050b14;
+      background: linear-gradient(90deg, #00ffcc, #00f0ff);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(0, 255, 204, 0.6);
+      transition: transform 0.2s;
+    }
+
+    .start-btn:hover {
+      transform: scale(1.02);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* HUD Styling */
+    .game-hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 15px;
+    }
+
+    .hud-top-bar {
+      display: flex;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .hud-item {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(8px);
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .hud-btn {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      color: #00f0ff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background 0.2s;
+    }
+
+    .hud-btn:hover {
+      background: rgba(0, 240, 255, 0.2);
+    }
+
+    /* GPS Banner */
+    .hud-gps-banner {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #00f0ff;
+      color: #00f0ff;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      pointer-events: auto;
+    }
+
+    /* HUD Gauge Cluster */
+    .hud-gauge-cluster {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      padding: 20px;
+      border-radius: 20px;
+      text-align: center;
+      width: 180px;
+    }
+
+    .speedo-dial {
+      position: relative;
+    }
+
+    .speed-number {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: #00f0ff;
+      line-height: 1;
+    }
+
+    .speed-unit {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      letter-spacing: 2px;
+    }
+
+    .gear-badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: #00ffcc;
+      color: #050b14;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .rpm-bar-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .rpm-bar-fill {
+      width: 20%;
+      height: 100%;
+      background: linear-gradient(90deg, #00ffcc, #ff0055);
+    }
+
+    /* Mini-Map */
+    .hud-minimap-container {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 2px solid #00f0ff;
+      border-radius: 50%;
+      padding: 4px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+    }
+
+    /* Center Controls Toggles */
+    .hud-center-toggles {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .ctrl-pill-btn {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      padding: 10px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    /* Mobile Pedals */
+    .mobile-touch-pedals {
+      position: absolute;
+      bottom: 20px;
+      right: 220px;
+      display: flex;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .pedal-btn {
+      width: 70px;
+      height: 90px;
+      border-radius: 12px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .gas-pedal { background: rgba(0, 255, 204, 0.3); border-color: #00ffcc; }
+    .brake-pedal { background: rgba(255, 0, 85, 0.3); border-color: #ff0055; }
+    .handbrake-pedal { background: rgba(255, 204, 0, 0.3); border-color: #ffcc00; width: 50px; }
+
+    /* Virtual Steering Wheel UI */
+    .virtual-steering-wheel {
+      position: absolute;
+      bottom: 20px;
+      left: 200px;
+      width: 140px;
+      height: 140px;
+      pointer-events: auto;
+    }
+
+    .wheel-ring {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 10px solid #334155;
+      background: rgba(15, 23, 42, 0.6);
+      position: relative;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+      touch-action: none;
+    }
+
+    .wheel-hub {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #00f0ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.5rem;
+      font-weight: 900;
+      color: #050b14;
+    }
+
+    .wheel-spoke { position: absolute; background: #334155; }
+    .spoke-left { top: 50%; left: 0; width: 45px; height: 8px; transform: translateY(-50%); }
+    .spoke-right { top: 50%; right: 0; width: 45px; height: 8px; transform: translateY(-50%); }
+    .spoke-bottom { bottom: 0; left: 50%; width: 8px; height: 45px; transform: translateX(-50%); }
+
+    /* AI Copilot & Radio Player Floating Widget */
+    .copilot-hud-widget {
+      position: absolute;
+      top: 65px;
+      right: 20px;
+      z-index: 120;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .copilot-avatar-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .copilot-mic-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #7000ff;
+      border: 2px solid #00f0ff;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(112, 0, 255, 0.6);
+    }
+
+    .copilot-bubble {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #7000ff;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      max-width: 250px;
+    }
+
+    .copilot-prompt-bar {
+      display: flex;
+      gap: 6px;
+    }
+
+    .copilot-prompt-bar input {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      width: 220px;
+    }
+
+    .copilot-prompt-bar button {
+      background: #00f0ff;
+      color: #050b14;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    /* Radio Bar */
+    .radio-player-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 8px 12px;
+      border-radius: 10px;
+    }
+
+    .radio-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #ffffff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+
+    .radio-station-info {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.75rem;
+    }
+
+    .station-name { font-weight: 700; color: #00f0ff; }
+    .station-genre { font-size: 0.65rem; color: #94a3b8; }
+
+    /* Safety Banner */
+    .safety-banner {
+      background: rgba(255, 0, 85, 0.9);
+      color: #ffffff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.8rem;
+      box-shadow: 0 0 15px rgba(255, 0, 85, 0.6);
+    }
+
+    /* Settings UI Styles */
+    .settings-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 600;
+      background: rgba(5, 11, 20, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .settings-modal {
+      width: 95%;
+      max-width: 1100px;
+      height: 90%;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 40px rgba(0, 240, 255, 0.2);
+    }
+
+    .settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .header-search input {
+      background: #0f172a;
+      border: 1px solid #00f0ff;
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 20px;
+      width: 320px;
+      font-size: 0.9rem;
+    }
+
+    .settings-body {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .settings-sidebar {
+      background: rgba(0, 0, 0, 0.3);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .nav-item {
+      padding: 12px 16px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #94a3b8;
+      transition: background 0.2s;
+    }
+
+    .nav-item.active, .nav-item:hover {
+      background: rgba(0, 240, 255, 0.15);
+      color: #00f0ff;
+    }
+
+    .settings-options-panel {
+      padding: 25px;
+      overflow-y: auto;
+    }
+
+    .setting-group {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 15px 20px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    .settings-footer {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .reset-all-btn {
+      background: rgba(255, 0, 85, 0.2);
+      border: 1px solid #ff0055;
+      color: #ff0055;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .save-apply-btn {
+      background: linear-gradient(90deg, #00ffcc, #00f0ff);
+      color: #050b14;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+    }
+
+    /* Garage UI Styles */
+    .garage-overlay, .map-overlay, .missions-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 500;
+      background: rgba(5, 11, 20, 0.92);
+      backdrop-filter: blur(16px);
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .garage-header, .map-header, .missions-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+      padding-bottom: 15px;
+    }
+
+    .garage-content {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 25px;
+      height: 100%;
+    }
+
+    .garage-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .vehicle-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .vehicle-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .vehicle-item.selected {
+      border-color: #00f0ff;
+      background: rgba(0, 240, 255, 0.1);
+    }
+
+    .garage-select {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #00f0ff;
+      color: #ffffff;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 8px 0 16px 0;
+    }
+
+    .garage-slider {
+      width: 100%;
+      margin: 10px 0 20px 0;
+    }
+
+    .color-picker-grid {
+      display: flex;
+      gap: 12px;
+      margin: 10px 0;
+    }
+
+    .color-dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid #ffffff;
+    }
+
+    .upgrade-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 12px 0;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 10px 15px;
+      border-radius: 8px;
+    }
+
+    .buy-btn, .drive-btn, .close-btn {
+      background: #00f0ff;
+      color: #050b14;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .drive-btn {
+      background: #00ffcc;
+      font-size: 1.1rem;
+      padding: 14px 28px;
+      box-shadow: 0 0 20px rgba(0, 255, 204, 0.4);
+    }
+
+    .close-btn {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    .ai-mechanic-box {
+      margin-top: 25px;
+      background: rgba(112, 0, 255, 0.15);
+      border: 1px solid #7000ff;
+      padding: 15px;
+      border-radius: 12px;
+    }
+
+    .ai-mech-btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ai-prompt-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid #00f0ff;
+      color: #00f0ff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+
+    /* Map UI */
+    .map-viewport {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      background: #0f172a;
+      border-radius: 16px;
+      border: 2px solid #00f0ff;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 10px;
+      padding: 20px;
+    }
+
+    .biome-region {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      padding: 15px;
+      position: relative;
+    }
+
+    .pin {
+      position: absolute;
+      background: #ff0055;
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 0 10px #ff0055;
+    }
+
+    /* Missions Grid */
+    .missions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .mission-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 14px;
+      padding: 20px;
+    }
+
+    .m-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .m-type-tag {
+      background: #00f0ff;
+      color: #050b14;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/index-CWGxCWPR.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+</body>
+</html>
