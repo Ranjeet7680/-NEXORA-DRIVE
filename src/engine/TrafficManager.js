@@ -101,14 +101,28 @@ export class TrafficManager {
         tv.mesh.rotation.y = tv.laneAngle + (tv.direction > 0 ? Math.PI / 2 : -Math.PI / 2);
 
         // Dynamic Recycle: Keep traffic dense around player position!
-        const distToPlayer = tv.mesh.position.distanceTo(playerPosition);
+        const dx = x - playerPosition.x;
+        const dz = z - playerPosition.z;
+        const distSq = dx * dx + dz * dz;
         
-        // If traffic car gets too far behind or ahead, recycle it into player's forward view
-        if (distToPlayer > 300) {
-          // Spawn ahead of player along highway
-          const forwardOffset = (0.08 + Math.random() * 0.25);
+        // If traffic car gets too far behind or ahead (> 260m), recycle it into player's forward view
+        if (distSq > 67600) {
+          const forwardOffset = (0.08 + Math.random() * 0.22);
           tv.laneAngle = playerAngle + forwardOffset;
           tv.radius = 565 + [-7, -2.5, 2.5, 7][idx % 4];
+        }
+
+        // Distance Culling for fine details (wheel spin)
+        if (distSq < 14400) { // < 120m
+          const wheels = tv.mesh.userData.wheels;
+          if (wheels && wheels.length >= 2) {
+            const rotDelta = (speedMs * deltaTime) / tv.config.wheelRadius;
+            wheels.forEach(w => {
+              if (w.children[0]) {
+                w.children[0].rotation.x += rotDelta;
+              }
+            });
+          }
         }
       } else {
         // Move along city grid straight lines
@@ -118,16 +132,20 @@ export class TrafficManager {
         if (Math.abs(tv.mesh.position.z) > 420) {
           tv.mesh.position.z = -Math.sign(tv.mesh.position.z) * 400;
         }
-      }
 
-      // Wheels spin animation
-      const wheels = tv.mesh.userData.wheels;
-      if (wheels && wheels.length >= 2) {
-        wheels.forEach(w => {
-          if (w.children[0]) {
-            w.children[0].rotation.x += (speedMs * deltaTime) / tv.config.wheelRadius;
+        const dx = tv.mesh.position.x - playerPosition.x;
+        const dz = tv.mesh.position.z - playerPosition.z;
+        if (dx * dx + dz * dz < 14400) {
+          const wheels = tv.mesh.userData.wheels;
+          if (wheels && wheels.length >= 2) {
+            const rotDelta = (speedMs * deltaTime) / tv.config.wheelRadius;
+            wheels.forEach(w => {
+              if (w.children[0]) {
+                w.children[0].rotation.x += rotDelta;
+              }
+            });
           }
-        });
+        }
       }
     });
   }

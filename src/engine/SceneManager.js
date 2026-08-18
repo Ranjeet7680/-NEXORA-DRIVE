@@ -27,21 +27,21 @@ export class SceneManager {
     this.ambientLight = new THREE.AmbientLight(0xfff4e0, 0.9);
     this.scene.add(this.ambientLight);
 
-    // Sunlight Directional Light with large shadow map
+    // Sunlight Directional Light with optimized shadow map
     this.sunLight = new THREE.DirectionalLight(0xfffaed, 2.0);
     this.sunLight.position.set(250, 400, 200);
     this.sunLight.castShadow = true;
-    this.sunLight.shadow.mapSize.width = 4096;
-    this.sunLight.shadow.mapSize.height = 4096;
+    this.sunLight.shadow.mapSize.width = 2048;
+    this.sunLight.shadow.mapSize.height = 2048;
     this.sunLight.shadow.camera.near = 0.5;
-    this.sunLight.shadow.camera.far = 2000;
+    this.sunLight.shadow.camera.far = 1600;
 
-    const d = 500;
+    const d = 420;
     this.sunLight.shadow.camera.left = -d;
     this.sunLight.shadow.camera.right = d;
     this.sunLight.shadow.camera.top = d;
     this.sunLight.shadow.camera.bottom = -d;
-    this.sunLight.shadow.bias = -0.0005;
+    this.sunLight.shadow.bias = -0.0008;
     this.scene.add(this.sunLight);
 
     // Secondary fill light from opposite side (softer shadows)

@@ -826,12 +826,20 @@ export class TerrainManager {
     });
   }
 
-  // Fast Collision Detection Helper ("Aar ya paar nahi ho sakta")
+  // Highly Optimized Collision Detection with Fast Proximity Pre-Filtering
   checkCollision(posX, posZ, vehicleRadius = 1.6) {
+    const searchRadius = 40.0; // Fast reject threshold
+
     for (let i = 0; i < this.colliders.length; i++) {
       const col = this.colliders[i];
 
       if (col.type === 'box') {
+        const midX = (col.minX + col.maxX) * 0.5;
+        const midZ = (col.minZ + col.maxZ) * 0.5;
+        if (Math.abs(posX - midX) > searchRadius || Math.abs(posZ - midZ) > searchRadius) {
+          continue; // Instantly skip far colliders
+        }
+
         // Nearest point on AABB box to circle center
         const closestX = Math.max(col.minX, Math.min(posX, col.maxX));
         const closestZ = Math.max(col.minZ, Math.min(posZ, col.maxZ));
@@ -854,6 +862,10 @@ export class TerrainManager {
           };
         }
       } else if (col.type === 'circle') {
+        if (Math.abs(posX - col.x) > searchRadius || Math.abs(posZ - col.z) > searchRadius) {
+          continue; // Instantly skip far circle colliders
+        }
+
         const dx = posX - col.x;
         const dz = posZ - col.z;
         const minDist = col.radius + vehicleRadius;
