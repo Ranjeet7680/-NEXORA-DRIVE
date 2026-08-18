@@ -18,6 +18,7 @@ export class TerrainManager {
   }
 
   generateWorld() {
+    this.createSkyDome();
     this.createTerrainGeometry();
     this.createRoadNetwork();
     this.createWaterBody();
@@ -28,37 +29,50 @@ export class TerrainManager {
     this.createStreetLightsAndSigns();
   }
 
-  // Height formula for the 5 biomes based on world coordinates (x, z)
+  createSkyDome() {
+    // Procedural Sky Dome
+    const skyGeo = new THREE.SphereGeometry(1400, 32, 16);
+    const skyMat = new THREE.MeshBasicMaterial({
+      color: 0x75a3d1,
+      side: THREE.BackSide
+    });
+    const skyDome = new THREE.Mesh(skyGeo, skyMat);
+    this.scene.add(skyDome);
+  }
+
+  // Multi-frequency elevation noise for 5 biomes
   getHeightAt(x, z) {
     const half = this.size * 0.5;
     const nx = x / half;
     const nz = z / half;
 
-    // Flatten central hub & ring highway road circuit
+    // Flatten central hub & ring highway road circuit (Radius 565)
     const distFromOrigin = Math.sqrt(x * x + z * z);
-    if (distFromOrigin < 280) return 0; // Flat central hub
+    if (distFromOrigin < 280) return 0;
 
-    // North-East: Mountains (High steep peaks)
+    // North-East: Alpine Mountains (High steep peaks)
     if (nx > 0.1 && nz < -0.1) {
-      const hill1 = Math.sin(x * 0.015) * Math.cos(z * 0.015) * 55;
-      const hill2 = Math.sin(x * 0.03 + z * 0.03) * 30;
-      return Math.max(0, hill1 + hill2);
+      const hill1 = Math.sin(x * 0.015) * Math.cos(z * 0.015) * 65;
+      const hill2 = Math.sin(x * 0.035 + z * 0.035) * 35;
+      const hill3 = Math.cos(x * 0.06) * 15;
+      return Math.max(0, hill1 + hill2 + hill3);
     }
 
-    // South-East: Ice Hills & Glaciers (Snow mountains)
+    // South-East: Ice Hills & Glaciers (Rolling snow mountains)
     if (nx > 0.1 && nz > 0.1) {
-      const hill = Math.sin(x * 0.012) * Math.sin(z * 0.012) * 45;
-      return Math.max(0, hill);
+      const hill = Math.sin(x * 0.012) * Math.sin(z * 0.012) * 50;
+      const peak = Math.cos(x * 0.025 + z * 0.025) * 20;
+      return Math.max(0, hill + peak);
     }
 
-    // North-West: Forest (Gentle rolling hills)
+    // North-West: Forest Valley (Gentle rolling hills)
     if (nx < -0.1 && nz < -0.1) {
-      return Math.max(0, Math.sin(x * 0.02) * Math.cos(z * 0.02) * 15);
+      return Math.max(0, Math.sin(x * 0.02) * Math.cos(z * 0.02) * 18);
     }
 
     // South-West: River & Beach Basin
     if (nx < -0.1 && nz > 0.1) {
-      const basin = -10 + Math.sin(x * 0.01) * 5;
+      const basin = -12 + Math.sin(x * 0.012) * 6;
       return Math.min(2, basin);
     }
 
@@ -79,15 +93,14 @@ export class TerrainManager {
 
   createTerrainGeometry() {
     const geo = new THREE.PlaneGeometry(this.size, this.size, this.segments, this.segments);
-
     const pos = geo.attributes.position;
     const colors = new Float32Array(pos.count * 3);
 
-    const colorCity = new THREE.Color(0x404850);
-    const colorForest = new THREE.Color(0x345e32);
-    const colorMountain = new THREE.Color(0x6e6a62);
-    const colorRiver = new THREE.Color(0xdfc299);
-    const colorIce = new THREE.Color(0xeef6ff);
+    const colorCity = new THREE.Color(0x3d444d);
+    const colorForest = new THREE.Color(0x2c542b);
+    const colorMountain = new THREE.Color(0x6b665e);
+    const colorRiver = new THREE.Color(0xd9ba8e); // Sand beach
+    const colorIce = new THREE.Color(0xeaf4ff);   // Snow
 
     for (let i = 0; i < pos.count; i++) {
       const vx = pos.getX(i);
@@ -119,7 +132,7 @@ export class TerrainManager {
     const mat = new THREE.MeshStandardMaterial({
       vertexColors: true,
       roughness: 0.8,
-      metalness: 0.15
+      metalness: 0.12
     });
 
     this.terrainMesh = new THREE.Mesh(geo, mat);
@@ -128,12 +141,13 @@ export class TerrainManager {
   }
 
   createRoadNetwork() {
-    const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x222226, roughness: 0.45, metalness: 0.2 });
+    // Procedural Asphalt Texture
+    const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x222226, roughness: 0.4, metalness: 0.2 });
     const yellowLineMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
     const whiteLineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const guardrailMat = new THREE.MeshStandardMaterial({ color: 0x8899aa, roughness: 0.3, metalness: 0.8 });
 
-    // 1. Main Outer Ring Highway (Radius 565, Width 32)
+    // 1. Main Outer Ring Highway (Radius 565, Width 34)
     const ringGeo = new THREE.RingGeometry(548, 582, 128);
     ringGeo.rotateX(-Math.PI / 2);
     const ringMesh = new THREE.Mesh(ringGeo, asphaltMat);
@@ -141,14 +155,14 @@ export class TerrainManager {
     ringMesh.receiveShadow = true;
     this.scene.add(ringMesh);
 
-    // Double Yellow Center Line Ring
+    // Double Yellow Center Line
     const yellowLineGeo = new THREE.RingGeometry(564, 566, 128);
     yellowLineGeo.rotateX(-Math.PI / 2);
     const yellowLineMesh = new THREE.Mesh(yellowLineGeo, yellowLineMat);
     yellowLineMesh.position.y = 0.27;
     this.scene.add(yellowLineMesh);
 
-    // White Edge Markings
+    // White Edge Lines
     const whiteInnerGeo = new THREE.RingGeometry(550, 551, 128);
     whiteInnerGeo.rotateX(-Math.PI / 2);
     const whiteInnerMesh = new THREE.Mesh(whiteInnerGeo, whiteLineMat);
@@ -161,7 +175,7 @@ export class TerrainManager {
     whiteOuterMesh.position.y = 0.27;
     this.scene.add(whiteOuterMesh);
 
-    // Highway Guardrails along Ring Curve
+    // Highway Metallic Guardrails
     for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 16) {
       const gx = Math.sin(angle) * 584;
       const gz = Math.cos(angle) * 584;
@@ -190,7 +204,7 @@ export class TerrainManager {
       this.scene.add(road);
     }
 
-    // 3. Mountain Road Pass
+    // 3. Mountain Winding Pass
     const mountainRoadGeo = new THREE.PlaneGeometry(26, 750);
     mountainRoadGeo.rotateX(-Math.PI / 2);
     mountainRoadGeo.rotateY(Math.PI / 4);
@@ -234,7 +248,7 @@ export class TerrainManager {
     this.waterMesh.position.set(-450, 0.1, 450);
     this.scene.add(this.waterMesh);
 
-    // Wooden Bridge across River
+    // Wooden Bridge
     const bridgeGeo = new THREE.BoxGeometry(32, 4, 180);
     const bridgeMat = new THREE.MeshStandardMaterial({ color: 0x6e4a2d, roughness: 0.8 });
     const bridge = new THREE.Mesh(bridgeGeo, bridgeMat);

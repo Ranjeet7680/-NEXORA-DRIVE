@@ -1,4 +1,4 @@
-// In-Game Cyberpunk HUD for NEXORA DRIVE
+// In-Game Cyberpunk HUD with Interactive Real-Time Mini-Map for NEXORA DRIVE
 
 export class HUD {
   constructor(container, callbacks) {
@@ -34,10 +34,10 @@ export class HUD {
         🧭 <span id="gpsText">GPS Active: Proceed along open highway.</span>
       </div>
 
-      <!-- Bottom Left: Mini-Map GPS -->
+      <!-- Bottom Left: Interactive Mini-Map GPS -->
       <div class="hud-minimap-container">
         <canvas id="minimapCanvas" width="160" height="160"></canvas>
-        <div class="minimap-label">GPS RADAR</div>
+        <div class="minimap-label">MINI MAP RADAR</div>
       </div>
 
       <!-- Bottom Center: Camera & Controls Toggles -->
@@ -134,11 +134,10 @@ export class HUD {
       this.hudElement.querySelector('#gpsText').innerText = turnInstruction;
     }
 
-    // RPM fill
     const rpmPct = Math.min(100, Math.max(0, (rpm / 7500) * 100));
     this.hudElement.querySelector('#rpmFill').style.width = `${rpmPct}%`;
 
-    // Render Mini-Map Radar
+    // Render Real-Time Mini-Map Canvas
     this.renderMiniMap(playerPos, playerRotation, targetPos);
   }
 
@@ -150,52 +149,114 @@ export class HUD {
     const h = this.miniMapCanvas.height;
     const cx = w / 2;
     const cy = h / 2;
-    const scale = 0.12;
+    const scale = 0.15; // Map scale
 
     ctx.clearRect(0, 0, w, h);
 
-    // Background Radar Circle
-    ctx.fillStyle = '#0f172a';
+    // Circular Clip Mask
+    ctx.save();
     ctx.beginPath();
     ctx.arc(cx, cy, cx - 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#00f0ff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    ctx.clip();
 
-    // Radar grid lines
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.2)';
-    ctx.lineWidth = 1;
+    // Dark Map Background
+    ctx.fillStyle = '#0a0f1d';
+    ctx.fillRect(0, 0, w, h);
+
+    // Render World Terrain Biomes (relative to player position)
+    const renderX = (wx) => cx + (wx - playerPos.x) * scale;
+    const renderZ = (wz) => cy + (wz - playerPos.z) * scale;
+
+    // Biome Region Shading
+    ctx.fillStyle = 'rgba(52, 94, 50, 0.3)'; // Forest
+    ctx.fillRect(renderX(-1200), renderZ(-1200), 1200 * scale, 1200 * scale);
+
+    ctx.fillStyle = 'rgba(238, 246, 255, 0.3)'; // Ice
+    ctx.fillRect(renderX(0), renderZ(0), 1200 * scale, 1200 * scale);
+
+    ctx.fillStyle = 'rgba(0, 119, 190, 0.4)'; // River water
+    ctx.fillRect(renderX(-1200), renderZ(0), 1200 * scale, 1200 * scale);
+
+    ctx.fillStyle = 'rgba(110, 102, 94, 0.3)'; // Mountains
+    ctx.fillRect(renderX(0), renderZ(-1200), 1200 * scale, 1200 * scale);
+
+    // Draw Ring Highway (Radius 565)
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 10 * scale;
     ctx.beginPath();
-    ctx.arc(cx, cy, (cx - 2) * 0.5, 0, Math.PI * 2);
+    ctx.arc(renderX(0), renderZ(0), 565 * scale, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Target GPS Marker
+    ctx.strokeStyle = '#ffcc00'; // Yellow center line
+    ctx.lineWidth = 2 * scale;
+    ctx.beginPath();
+    ctx.arc(renderX(0), renderZ(0), 565 * scale, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Draw City Grid Roads
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 6 * scale;
+    for (let rx = -300; rx <= 300; rx += 150) {
+      ctx.beginPath();
+      ctx.moveTo(renderX(rx), renderZ(-300));
+      ctx.lineTo(renderX(rx), renderZ(300));
+      ctx.stroke();
+    }
+    for (let rz = -300; rz <= 300; rz += 150) {
+      ctx.beginPath();
+      ctx.moveTo(renderX(-300), renderZ(rz));
+      ctx.lineTo(renderX(300), renderZ(rz));
+      ctx.stroke();
+    }
+
+    // Draw Target GPS Marker
     if (targetPos) {
-      const dx = (targetPos.x - playerPos.x) * scale;
-      const dz = (targetPos.z - playerPos.z) * scale;
-      const tx = cx + dx;
-      const ty = cy + dz;
+      const tx = renderX(targetPos.x);
+      const tz = renderZ(targetPos.z);
 
       ctx.fillStyle = '#ff0055';
       ctx.beginPath();
-      ctx.arc(tx, ty, 6, 0, Math.PI * 2);
+      ctx.arc(tx, tz, 5, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
     }
 
-    // Player Direction Arrow
+    // Draw Garage Marker (Center Hub)
+    const gx = renderX(0);
+    const gz = renderZ(0);
+    ctx.fillStyle = '#00f0ff';
+    ctx.beginPath();
+    ctx.arc(gx, gz, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    // Outer Map Ring Border
+    ctx.strokeStyle = '#00f0ff';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, cx - 2, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Draw Player Vehicle Directional Arrow in Center (Rotated to vehicle heading)
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(playerRotation.y);
 
     ctx.fillStyle = '#00ffcc';
     ctx.beginPath();
-    ctx.moveTo(0, -8);
-    ctx.lineTo(6, 6);
+    ctx.moveTo(0, -9);
+    ctx.lineTo(7, 7);
     ctx.lineTo(0, 3);
-    ctx.lineTo(-6, 6);
+    ctx.lineTo(-7, 7);
     ctx.closePath();
     ctx.fill();
+
+    ctx.strokeStyle = '#050b14';
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
     ctx.restore();
   }
