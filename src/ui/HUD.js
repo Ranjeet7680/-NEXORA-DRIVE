@@ -59,20 +59,30 @@ export class HUD {
           <div class="gear-badge" id="gearNum">1</div>
         </div>
         <div class="v-stats">
-          <div class="v-stat-item"><span>FUEL</span><div class="bar"><div class="fill" style="width: 85%;"></div></div></div>
+          <div class="v-stat-item"><span>FUEL</span><div class="bar"><div class="fill" id="fuelFill" style="width: 100%;"></div></div></div>
+          <div class="v-stat-item"><span>⚡NOS</span><div class="bar"><div class="fill nitro" id="nitroFill" style="width: 100%;"></div></div></div>
           <div class="v-stat-item"><span>HP</span><div class="bar"><div class="fill health" style="width: 100%;"></div></div></div>
         </div>
+      </div>
+
+      <!-- Drift Score Popup -->
+      <div class="drift-score-hud" id="driftScoreHud" style="display:none;">
+        <div class="drift-label">🔥 DRIFT</div>
+        <div class="drift-score" id="driftScoreNum">0</div>
+        <div class="drift-combo" id="driftComboNum">x0</div>
       </div>
 
       <!-- Mobile Touch Pedals -->
       <div class="mobile-touch-pedals">
         <button class="pedal-btn brake-pedal" id="pedalBrake">BRAKE / REV</button>
         <button class="pedal-btn handbrake-pedal" id="pedalHandbrake">P</button>
+        <button class="pedal-btn nitro-pedal" id="pedalNitro">⚡NOS</button>
         <button class="pedal-btn gas-pedal" id="pedalGas">GAS</button>
       </div>
     `;
 
     this.container.appendChild(this.hudElement);
+
 
     this.miniMapCanvas = this.hudElement.querySelector('#minimapCanvas');
     this.miniMapCtx = this.miniMapCanvas.getContext('2d');
@@ -97,38 +107,40 @@ export class HUD {
     bindBtn('btnRespawn', 'onRespawn');
 
     // Touch Pedals
-    const gasBtn = this.hudElement.querySelector('#pedalGas');
-    const brakeBtn = this.hudElement.querySelector('#pedalBrake');
+    const gasBtn       = this.hudElement.querySelector('#pedalGas');
+    const brakeBtn     = this.hudElement.querySelector('#pedalBrake');
     const handbrakeBtn = this.hudElement.querySelector('#pedalHandbrake');
+    const nitroBtn     = this.hudElement.querySelector('#pedalNitro');
 
     if (gasBtn) {
       gasBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.callbacks.onGasPress && this.callbacks.onGasPress(true); });
-      gasBtn.addEventListener('touchend', (e) => { e.preventDefault(); this.callbacks.onGasPress && this.callbacks.onGasPress(false); });
-      gasBtn.addEventListener('mousedown', () => this.callbacks.onGasPress && this.callbacks.onGasPress(true));
-      gasBtn.addEventListener('mouseup', () => this.callbacks.onGasPress && this.callbacks.onGasPress(false));
+      gasBtn.addEventListener('touchend',   (e) => { e.preventDefault(); this.callbacks.onGasPress && this.callbacks.onGasPress(false); });
+      gasBtn.addEventListener('mousedown',  () => this.callbacks.onGasPress && this.callbacks.onGasPress(true));
+      gasBtn.addEventListener('mouseup',    () => this.callbacks.onGasPress && this.callbacks.onGasPress(false));
     }
 
     if (brakeBtn) {
       brakeBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.callbacks.onBrakePress && this.callbacks.onBrakePress(true); });
-      brakeBtn.addEventListener('touchend', (e) => { e.preventDefault(); this.callbacks.onBrakePress && this.callbacks.onBrakePress(false); });
-      brakeBtn.addEventListener('mousedown', () => this.callbacks.onBrakePress && this.callbacks.onBrakePress(true));
-      brakeBtn.addEventListener('mouseup', () => this.callbacks.onBrakePress && this.callbacks.onBrakePress(false));
+      brakeBtn.addEventListener('touchend',   (e) => { e.preventDefault(); this.callbacks.onBrakePress && this.callbacks.onBrakePress(false); });
+      brakeBtn.addEventListener('mousedown',  () => this.callbacks.onBrakePress && this.callbacks.onBrakePress(true));
+      brakeBtn.addEventListener('mouseup',    () => this.callbacks.onBrakePress && this.callbacks.onBrakePress(false));
     }
 
     if (handbrakeBtn) {
       handbrakeBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.callbacks.onHandbrakePress && this.callbacks.onHandbrakePress(true); });
-      handbrakeBtn.addEventListener('touchend', (e) => { e.preventDefault(); this.callbacks.onHandbrakePress && this.callbacks.onHandbrakePress(false); });
+      handbrakeBtn.addEventListener('touchend',   (e) => { e.preventDefault(); this.callbacks.onHandbrakePress && this.callbacks.onHandbrakePress(false); });
+
     }
   }
 
-  update(speed, rpm, gear, biome, timeStr, weather, credits, cameraName, targetPos, playerPos, playerRotation, turnInstruction) {
-    this.hudElement.querySelector('#speedNum').innerText = speed;
-    this.hudElement.querySelector('#gearNum').innerText = gear;
+  update(speed, rpm, gear, biome, timeStr, weather, credits, cameraName, targetPos, playerPos, playerRotation, turnInstruction, gameplayData) {
+    this.hudElement.querySelector('#speedNum').innerText = Math.floor(speed);
+    this.hudElement.querySelector('#gearNum').innerText  = gear;
     this.hudElement.querySelector('#hudBiome').innerHTML = `<span class="icon">${biome.icon}</span> ${biome.name}`;
     this.hudElement.querySelector('#hudWeather').innerText = `${weather.icon} ${weather.name}`;
-    this.hudElement.querySelector('#hudTime').innerText = timeStr;
-    this.hudElement.querySelector('#hudCredits').innerText = `💳 $${credits}`;
-    this.hudElement.querySelector('#camName').innerText = cameraName;
+    this.hudElement.querySelector('#hudTime').innerText    = timeStr;
+    this.hudElement.querySelector('#hudCredits').innerText = `💳 $${credits.toLocaleString()}`;
+    this.hudElement.querySelector('#camName').innerText    = cameraName;
 
     if (turnInstruction) {
       this.hudElement.querySelector('#gpsText').innerText = turnInstruction;
@@ -136,6 +148,32 @@ export class HUD {
 
     const rpmPct = Math.min(100, Math.max(0, (rpm / 7500) * 100));
     this.hudElement.querySelector('#rpmFill').style.width = `${rpmPct}%`;
+
+    // Fuel & Nitro Bars
+    if (gameplayData) {
+      const fuelFill = this.hudElement.querySelector('#fuelFill');
+      if (fuelFill) {
+        fuelFill.style.width = `${Math.max(0, gameplayData.fuel)}%`;
+        fuelFill.style.background = gameplayData.fuel < 20 ? '#ff3300' : '#22cc44';
+      }
+      const nitroFill = this.hudElement.querySelector('#nitroFill');
+      if (nitroFill) {
+        nitroFill.style.width = `${Math.max(0, gameplayData.nitro)}%`;
+        nitroFill.style.background = gameplayData.nitroActive ? '#ffffff' : '#00aaff';
+        nitroFill.style.boxShadow  = gameplayData.nitroActive ? '0 0 12px #00ffff' : 'none';
+      }
+      // Drift Score display
+      const driftHud = this.hudElement.querySelector('#driftScoreHud');
+      if (driftHud) {
+        if (gameplayData.driftScore > 0) {
+          driftHud.style.display = 'flex';
+          this.hudElement.querySelector('#driftScoreNum').innerText = gameplayData.driftScore.toLocaleString();
+          this.hudElement.querySelector('#driftComboNum').innerText = `x${gameplayData.driftCombo}`;
+        } else {
+          driftHud.style.display = 'none';
+        }
+      }
+    }
 
     // Render Real-Time Mini-Map Canvas
     this.renderMiniMap(playerPos, playerRotation, targetPos);

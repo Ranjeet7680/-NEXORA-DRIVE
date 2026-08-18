@@ -30,7 +30,7 @@ import { SettingsUI } from './ui/SettingsUI.js';
 class Game {
   constructor() {
     this.appContainer = document.getElementById('app');
-    
+
     this.saveData = SaveSystem.load();
     this.audioEngine = new AudioEngine();
 
@@ -56,6 +56,29 @@ class Game {
 
     // Desktop Key State
     this.keys = { forward: false, backward: false, left: false, right: false, handbrake: false };
+
+    // ── Gameplay Systems ──────────────────────────────────
+    this.fuel = 100;
+    this.maxFuel = 100;
+    this.fuelBurnRate = 0.6;        // % per second at full throttle
+
+    this.nitro = 100;
+    this.nitroActive = false;
+    this.nitroRegenRate = 6;
+    this.nitroBurnRate = 28;
+    this.nitroBoostForce = 2.5;
+
+    this.driftScore = 0;
+    this.driftCombo = 0;
+    this.driftTimer = 0;
+
+    this.speedCamZones = [
+      { x: 0, z: -565, radius: 40, limit: 80 },
+      { x: 565, z: 0,  radius: 40, limit: 80 },
+      { x: 0, z: 565,  radius: 40, limit: 80 },
+      { x: -565, z: 0, radius: 40, limit: 80 },
+    ];
+    this.speedCamCooldown = 0;
 
     this.init();
   }
@@ -244,6 +267,9 @@ class Game {
         case 'Space':
           this.physicsEngine.inputHandbrake = true;
           break;
+        case 'KeyN':
+          this.nitroActive = (this.nitro > 5);
+          break;
         case 'KeyC':
           this.cameraManager.nextCameraMode();
           break;
@@ -274,6 +300,9 @@ class Game {
         case 'Space':
           this.physicsEngine.inputHandbrake = false;
           break;
+        case 'KeyN':
+          this.nitroActive = false;
+          break;
       }
       this.updateKeyboardSteer();
     });
@@ -286,6 +315,74 @@ class Game {
     if (steer !== 0) {
       this.steeringWheelUI.setAngle(steer * 180);
     }
+  }
+
+  _updateGameplaySystems(deltaTime) {
+    const speed = this.physicsEngine.speedKmh;
+    const throttle = Math.abs(this.physicsEngine.inputThrottle);
+
+    // ── Fuel System ──
+    if (throttle > 0 && speed > 2) {
+      this.fuel = Math.max(0, this.fuel - this.fuelBurnRate * throttle * deltaTime);
+    } else {
+      // Very slow passive drain
+      this.fuel = Math.max(0, this.fuel - 0.02 * deltaTime);
+    }
+    if (this.fuel <= 0) {
+      this.physicsEngine.inputThrottle = 0; // Engine stalls
+    }
+
+    // Refuel at fuel station zones
+    const pos = this.physicsEngine.position;
+    const fuelZones = [{x:0,z:-100},{x:0,z:100},{x:-480,z:-480},{x:480,z:-480}];
+    fuelZones.forEach(fz => {
+      const dx = pos.x - fz.x, dz = pos.z - fz.z;
+      if (Math.sqrt(dx*dx + dz*dz) < 30 && speed < 5) {
+        this.fuel = Math.min(this.maxFuel, this.fuel + 25 * deltaTime);
+      }
+    });
+
+    // ── Nitro System ──
+    if (this.nitroActive && this.nitro > 0) {
+      this.nitro = Math.max(0, this.nitro - this.nitroBurnRate * deltaTime);
+      // Apply extra acceleration boost
+      if (this.physicsEngine.inputThrottle > 0) {
+        this.physicsEngine.velocity.z -= this.nitroBoostForce * deltaTime * 20;
+      }
+      if (this.nitro <= 0) this.nitroActive = false;
+    } else {
+      this.nitro = Math.min(100, this.nitro + this.nitroRegenRate * deltaTime);
+    }
+
+    // ── Drift Scoring ──
+    if (this.physicsEngine.isDrifting && speed > 30) {
+      this.driftTimer += deltaTime;
+      this.driftCombo = Math.floor(this.driftTimer * 2);
+      const pointsPerSec = Math.floor(speed * 0.5) * (1 + this.driftCombo * 0.1);
+      this.driftScore += pointsPerSec * deltaTime;
+      this.saveData.credits = Math.floor(this.saveData.credits + pointsPerSec * 0.01 * deltaTime);
+    } else if (this.driftTimer > 0) {
+      this.driftTimer = Math.max(0, this.driftTimer - deltaTime * 3);
+      if (this.driftTimer <= 0) { this.driftScore = 0; this.driftCombo = 0; }
+    }
+
+    // ── Speed Camera Zones ──
+    if (this.speedCamCooldown > 0) {
+      this.speedCamCooldown -= deltaTime;
+    } else {
+      this.speedCamZones.forEach(cam => {
+        const dx = pos.x - cam.x, dz = pos.z - cam.z;
+        if (Math.sqrt(dx*dx + dz*dz) < cam.radius && speed > cam.limit) {
+          const fine = Math.floor((speed - cam.limit) * 5);
+          this.saveData.credits = Math.max(0, this.saveData.credits - fine);
+          this.copilotHUD.showBubbleResponse(`📸 Speed Camera! Fine: $${fine}`);
+          this.speedCamCooldown = 8;
+        }
+      });
+    }
+
+    // ── Water Animation ──
+    this.terrainManager.updateWater(deltaTime);
   }
 
   gameLoop(time) {
@@ -342,9 +439,12 @@ class Game {
     // 9. UI Steering Wheel Spring Return
     this.steeringWheelUI.update(deltaTime);
 
-    // 10. Update HUD Overlay
+    // 10. Gameplay Systems (fuel, nitro, drift, speed cams, water)
+    this._updateGameplaySystems(deltaTime);
+
+    // 11. Update HUD Overlay
     const hours = Math.floor(this.weatherManager.timeOfDay);
-    const mins = Math.floor((this.weatherManager.timeOfDay % 1) * 60);
+    const mins  = Math.floor((this.weatherManager.timeOfDay % 1) * 60);
     const timeStr = `${hours < 10 ? '0' : ''}${hours}:${mins < 10 ? '0' : ''}${mins}`;
 
     this.hud.update(
@@ -359,10 +459,18 @@ class Game {
       this.activeMission ? this.activeMission.targetPos : null,
       this.physicsEngine.position,
       this.physicsEngine.rotation,
-      this.aiNavigation.turnInstruction
+      this.aiNavigation.turnInstruction,
+      // Extra gameplay data
+      {
+        fuel: this.fuel,
+        nitro: this.nitro,
+        nitroActive: this.nitroActive,
+        driftScore: Math.floor(this.driftScore),
+        driftCombo: this.driftCombo,
+      }
     );
 
-    // 11. Render 3D Scene
+    // 12. Render 3D Scene
     this.sceneManager.render();
   }
 }
@@ -371,3 +479,4 @@ class Game {
 window.addEventListener('DOMContentLoaded', () => {
   new Game();
 });
+
