@@ -156,14 +156,14 @@ export class VehicleBuilder {
     chassis.add(haloL);
     chassis.add(haloR);
 
-    // ── 3. Volumetric Forward Light Beams ──
+    // ── 3. Volumetric Forward Light Beams (Subtle & Off by default in daytime) ──
     const beamGeo = new THREE.ConeGeometry(5.5, 45, 16, 1, true);
     beamGeo.rotateX(Math.PI / 2);
     beamGeo.translate(0, 0, 22.5);
     const beamMat = new THREE.MeshBasicMaterial({
-      color: 0xffffee,
+      color: 0xfffaed,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.08,
       side: THREE.DoubleSide,
       depthWrite: false,
       blending: THREE.AdditiveBlending
@@ -172,6 +172,8 @@ export class VehicleBuilder {
     const beamRight = new THREE.Mesh(beamGeo, beamMat);
     beamLeft.position.set(-headX, headY, headZ);
     beamRight.position.set(headX, headY, headZ);
+    beamLeft.visible = false;
+    beamRight.visible = false;
     chassis.add(beamLeft);
     chassis.add(beamRight);
 
@@ -247,16 +249,24 @@ export class VehicleBuilder {
     hoodMesh.position.set(0, height * 0.52, length * 0.28);
     chassis.add(hoodMesh);
 
-    // Roof & Pillars
-    const cabinGeo = new THREE.BoxGeometry(width * 0.88, height * 0.45, length * 0.5);
-    const cabinMesh = new THREE.Mesh(cabinGeo, bodyMat);
-    cabinMesh.position.set(0, height * 0.75, -length * 0.08);
-    chassis.add(cabinMesh);
+    // Hollow Roof Slab & A/B/C Pillars (Open interior for FPV Driver View)
+    const roofGeo = new THREE.BoxGeometry(width * 0.86, 0.04, length * 0.42);
+    const roofMesh = new THREE.Mesh(roofGeo, bodyMat);
+    roofMesh.position.set(0, height * 0.94, -length * 0.06);
+    roofMesh.castShadow = true;
+    chassis.add(roofMesh);
 
-    // Windshield Glass
-    const windshieldGeo = new THREE.BoxGeometry(width * 0.85, height * 0.42, 0.04);
+    // Rear Windshield Glass
+    const rearGlassGeo = new THREE.BoxGeometry(width * 0.82, height * 0.38, 0.03);
+    const rearGlass = new THREE.Mesh(rearGlassGeo, glassMat);
+    rearGlass.position.set(0, height * 0.72, -length * 0.28);
+    rearGlass.rotation.x = 0.38;
+    chassis.add(rearGlass);
+
+    // Front Windshield Glass (Clear view for driver)
+    const windshieldGeo = new THREE.BoxGeometry(width * 0.85, height * 0.44, 0.02);
     const windshield = new THREE.Mesh(windshieldGeo, glassMat);
-    windshield.position.set(0, height * 0.74, length * 0.17);
+    windshield.position.set(0, height * 0.72, length * 0.16);
     windshield.rotation.x = -0.38;
     chassis.add(windshield);
 
@@ -357,7 +367,7 @@ export class VehicleBuilder {
     // ── 1. Cockpit Dashboard Table ──
     const dashGeo = new THREE.BoxGeometry(w * 0.95, 0.32, 0.6);
     const dashMesh = new THREE.Mesh(dashGeo, darkMat);
-    dashMesh.position.set(0, fpv.y - 0.28, fpv.z + 0.45);
+    dashMesh.position.set(0, fpv.y - 0.28, fpv.z + 0.55);
     chassis.add(dashMesh);
 
     // ── 2. Realistic Dual Analog/Digital Sport Gauge Cluster (Directly in front of driver) ──
@@ -365,7 +375,7 @@ export class VehicleBuilder {
     const clusterGeo = new THREE.PlaneGeometry(0.72, 0.28);
     const clusterMat = new THREE.MeshBasicMaterial({ map: dashTex, transparent: true });
     const clusterMesh = new THREE.Mesh(clusterGeo, clusterMat);
-    clusterMesh.position.set(fpv.x, fpv.y - 0.12, fpv.z + 0.30);
+    clusterMesh.position.set(fpv.x, fpv.y - 0.12, fpv.z + 0.40);
     clusterMesh.rotation.x = -0.12;
     chassis.add(clusterMesh);
 
@@ -374,7 +384,7 @@ export class VehicleBuilder {
     const infoGeo = new THREE.BoxGeometry(0.42, 0.30, 0.03);
     const infoMat = new THREE.MeshBasicMaterial({ map: infoTex });
     const infoMesh = new THREE.Mesh(infoGeo, infoMat);
-    infoMesh.position.set(0.38, fpv.y - 0.10, fpv.z + 0.36);
+    infoMesh.position.set(0.38, fpv.y - 0.10, fpv.z + 0.46);
     infoMesh.rotation.y = -0.22; // Angled toward driver
     infoMesh.rotation.x = -0.08;
     chassis.add(infoMesh);
@@ -382,7 +392,7 @@ export class VehicleBuilder {
     // ── 4. Rear-View Mirror at Top Center Windshield (Matching Image 1) ──
     const mirrorFrameGeo = new THREE.BoxGeometry(0.36, 0.11, 0.03);
     const mirrorFrame = new THREE.Mesh(mirrorFrameGeo, darkMat);
-    mirrorFrame.position.set(0, fpv.y + 0.26, fpv.z + 0.25);
+    mirrorFrame.position.set(0, fpv.y + 0.24, fpv.z + 0.35);
     mirrorFrame.rotation.x = 0.15;
     
     // Mirror glass reflective face
@@ -399,15 +409,15 @@ export class VehicleBuilder {
     ventGeo.rotateX(Math.PI / 2);
     const ventL = new THREE.Mesh(ventGeo, chromeMat);
     const ventR = new THREE.Mesh(ventGeo, chromeMat);
-    ventL.position.set(-w * 0.42, fpv.y - 0.18, fpv.z + 0.32);
-    ventR.position.set(w * 0.42, fpv.y - 0.18, fpv.z + 0.32);
+    ventL.position.set(-w * 0.42, fpv.y - 0.18, fpv.z + 0.42);
+    ventR.position.set(w * 0.42, fpv.y - 0.18, fpv.z + 0.42);
     chassis.add(ventL);
     chassis.add(ventR);
 
     // ── 6. Interactive Realistic Steering Wheel Mesh ──
     const wheelGroup = new THREE.Group();
     wheelGroup.name = 'steeringWheelMesh';
-    wheelGroup.position.set(fpv.x, fpv.y - 0.18, fpv.z + 0.22);
+    wheelGroup.position.set(fpv.x, fpv.y - 0.18, fpv.z + 0.30);
 
     const ringGeo = new THREE.TorusGeometry(0.19, 0.026, 12, 32);
     const ringMat = new THREE.MeshStandardMaterial({ color: 0x1f242d, roughness: 0.35, metalness: 0.2 });

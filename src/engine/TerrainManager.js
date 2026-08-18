@@ -155,10 +155,9 @@ export class TerrainManager {
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const mat = new THREE.MeshStandardMaterial({
-      map: this.grassTexture,
       vertexColors: true,
-      roughness: 0.85,
-      metalness: 0.05,
+      roughness: 0.8,
+      metalness: 0.1,
     });
 
     this.terrainMesh = new THREE.Mesh(geo, mat);
