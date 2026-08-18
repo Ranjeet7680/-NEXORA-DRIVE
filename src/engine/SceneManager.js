@@ -59,8 +59,74 @@ export class SceneManager {
     // Sky dome gradient
     this._createGradientSky();
 
+    // ── Glowing Sun Disc & Corona ──
+    this._createSunDisc();
+
+    // ── Animated Flying Birds in Sky ──
+    this.birds = [];
+    this._createFlyingBirds();
+
     // Window Resize Handler
     window.addEventListener('resize', () => this.onWindowResize());
+  }
+
+  _createSunDisc() {
+    const sunGroup = new THREE.Group();
+    
+    // Core brilliant sun disc
+    const discGeo = new THREE.CircleGeometry(45, 32);
+    const discMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+    const discMesh = new THREE.Mesh(discGeo, discMat);
+    sunGroup.add(discMesh);
+
+    // Outer soft sun halo flare
+    const haloGeo = new THREE.CircleGeometry(120, 32);
+    const haloMat = new THREE.MeshBasicMaterial({
+      color: 0xffea88,
+      transparent: true,
+      opacity: 0.35,
+      side: THREE.DoubleSide
+    });
+    const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+    sunGroup.add(haloMesh);
+
+    sunGroup.position.set(400, 500, 350);
+    sunGroup.lookAt(0, 0, 0);
+    this.scene.add(sunGroup);
+    this.sunDisc = sunGroup;
+  }
+
+  _createFlyingBirds() {
+    const birdMat = new THREE.MeshBasicMaterial({ color: 0x1e293b, side: THREE.DoubleSide });
+    for (let i = 0; i < 16; i++) {
+      const birdGroup = new THREE.Group();
+      
+      // Left & Right Wings (V-shape bird)
+      const wingGeo = new THREE.PlaneGeometry(3, 1.2);
+      const wingL = new THREE.Mesh(wingGeo, birdMat);
+      const wingR = new THREE.Mesh(wingGeo, birdMat);
+      wingL.position.x = -1.5;
+      wingR.position.x = 1.5;
+      wingL.rotation.z = 0.25;
+      wingR.rotation.z = -0.25;
+
+      birdGroup.add(wingL);
+      birdGroup.add(wingR);
+
+      const bx = -400 + Math.random() * 800;
+      const bz = -400 + Math.random() * 800;
+      const by = 80 + Math.random() * 120;
+      birdGroup.position.set(bx, by, bz);
+      birdGroup.userData = {
+        speed: 12 + Math.random() * 10,
+        wingTime: Math.random() * Math.PI * 2,
+        wingL,
+        wingR,
+        dir: new THREE.Vector3((Math.random() - 0.5), 0, (Math.random() - 0.5)).normalize()
+      };
+      this.scene.add(birdGroup);
+      this.birds.push(birdGroup);
+    }
   }
 
   _createGradientSky() {
@@ -184,6 +250,27 @@ export class SceneManager {
         cloud.position.x = -1200;
       }
     });
+
+    // Animate Birds
+    if (this.birds) {
+      this.birds.forEach(bird => {
+        const ud = bird.userData;
+        ud.wingTime += deltaTime * 8;
+        
+        // Wing flapping
+        const flap = Math.sin(ud.wingTime) * 0.45;
+        ud.wingL.rotation.z = 0.25 + flap;
+        ud.wingR.rotation.z = -0.25 - flap;
+
+        // Forward flight
+        bird.position.addScaledVector(ud.dir, ud.speed * deltaTime);
+
+        if (bird.position.x > 600) bird.position.x = -600;
+        if (bird.position.x < -600) bird.position.x = 600;
+        if (bird.position.z > 600) bird.position.z = -600;
+        if (bird.position.z < -600) bird.position.z = 600;
+      });
+    }
   }
 
   onWindowResize() {

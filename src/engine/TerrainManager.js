@@ -24,6 +24,7 @@ export class TerrainManager {
 
     // Procedural Textures
     this.asphaltTexture = TextureGenerator.createAsphaltTexture();
+    this.grassTexture = TextureGenerator.createGrassTexture();
     this.buildingTextures = [
       TextureGenerator.createBuildingFacadeTexture(0),
       TextureGenerator.createBuildingFacadeTexture(1),
@@ -46,6 +47,7 @@ export class TerrainManager {
     this.createBillboards();
     this.createFuelStations();
     this.createHighwayScenery();
+    this.createHighwayGantries();
   }
 
   // Multi-frequency elevation noise for 5 biomes
@@ -153,6 +155,7 @@ export class TerrainManager {
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const mat = new THREE.MeshStandardMaterial({
+      map: this.grassTexture,
       vertexColors: true,
       roughness: 0.85,
       metalness: 0.05,
@@ -979,6 +982,72 @@ export class TerrainManager {
         height: 10
       });
     }
+  }
+
+  createHighwayGantries() {
+    // Overhead Highway Metal Truss Gantries with Destination Signs (Every 90 deg along Ring Road)
+    const steelMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.85, roughness: 0.3 });
+    
+    const gantryConfigs = [
+      { angle: 0, title: 'INTERSTATE 101 NORTH', left: 'METROPOLIS CITY CENTER 2 KM', right: 'AIRPORT & COAST 5 KM' },
+      { angle: Math.PI / 2, title: 'EAST RING FREEWAY', left: 'ALPINE MOUNTAINS 4 KM', right: 'GLACIER ICE VALLEY 8 KM' },
+      { angle: Math.PI, title: 'SOUTH EXPRESSWAY', left: 'BEACH BASIN & RIVER 3 KM', right: 'PINE FOREST 6 KM' },
+      { angle: 3 * Math.PI / 2, title: 'WEST HIGHWAY LOOP', left: 'SPEEDWAY DOWNTOWN 1 KM', right: 'DESERT HIGHWAY 10 KM' },
+    ];
+
+    gantryConfigs.forEach(gc => {
+      const gantryGroup = new THREE.Group();
+      const r = 565;
+      const gx = Math.sin(gc.angle) * r;
+      const gz = Math.cos(gc.angle) * r;
+      const gy = this.getHeightAt(gx, gz);
+
+      // Two vertical support pillars (spanning 42m wide across road)
+      const pillarGeo = new THREE.CylinderGeometry(0.7, 0.7, 15, 8);
+      const pillarL = new THREE.Mesh(pillarGeo, steelMat);
+      const pillarR = new THREE.Mesh(pillarGeo, steelMat);
+      pillarL.position.set(-21, 7.5, 0);
+      pillarR.position.set(21, 7.5, 0);
+      gantryGroup.add(pillarL);
+      gantryGroup.add(pillarR);
+
+      // Horizontal overhead steel truss beam
+      const beamGeo = new THREE.BoxGeometry(43, 2.5, 2.5);
+      const beam = new THREE.Mesh(beamGeo, steelMat);
+      beam.position.set(0, 14, 0);
+      gantryGroup.add(beam);
+
+      // Overhead Interstate Green Directional Sign Board
+      const signTex = TextureGenerator.createHighwaySignTexture(gc.title, gc.left, gc.right);
+      const signGeo = new THREE.PlaneGeometry(16, 5.0);
+      const signMat = new THREE.MeshBasicMaterial({ map: signTex, side: THREE.DoubleSide });
+      const signMesh = new THREE.Mesh(signGeo, signMat);
+      signMesh.position.set(0, 14, 1.3);
+      gantryGroup.add(signMesh);
+
+      gantryGroup.position.set(gx, gy, gz);
+      gantryGroup.rotation.y = gc.angle + Math.PI / 2;
+      gantryGroup.castShadow = true;
+      this.scene.add(gantryGroup);
+
+      // Colliders for the 2 support pillars
+      const perpX = Math.cos(gc.angle);
+      const perpZ = -Math.sin(gc.angle);
+      this.colliders.push({
+        type: 'circle',
+        x: gx - perpX * 21,
+        z: gz - perpZ * 21,
+        radius: 1.5,
+        height: 15
+      });
+      this.colliders.push({
+        type: 'circle',
+        x: gx + perpX * 21,
+        z: gz + perpZ * 21,
+        radius: 1.5,
+        height: 15
+      });
+    });
   }
 
   updateWater(deltaTime) {

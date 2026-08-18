@@ -46,17 +46,16 @@ export class TextureGenerator {
     const ctx = canvas.getContext('2d');
 
     const styles = [
-      { bg: '#0f172a', glass: '#38bdf8', frame: '#0284c7', litProb: 0.75, neon: '#00f0ff' }, // Electric Cyan Glass
-      { bg: '#090d16', glass: '#facc15', frame: '#b45309', litProb: 0.65, neon: '#f59e0b' }, // Warm Golden Office
-      { bg: '#18181b', glass: '#ec4899', frame: '#831843', litProb: 0.70, neon: '#f43f5e' }, // Cyber Magenta
-      { bg: '#0f172a', glass: '#34d399', frame: '#065f46', litProb: 0.60, neon: '#10b981' }  // Emerald Tech
+      { bg: '#0f172a', glass: '#38bdf8', frame: '#0284c7', litProb: 0.75, neon: '#00f0ff' },
+      { bg: '#090d16', glass: '#facc15', frame: '#b45309', litProb: 0.65, neon: '#f59e0b' },
+      { bg: '#18181b', glass: '#ec4899', frame: '#831843', litProb: 0.70, neon: '#f43f5e' },
+      { bg: '#0f172a', glass: '#34d399', frame: '#065f46', litProb: 0.60, neon: '#10b981' }
     ];
     const s = styles[style % styles.length];
 
     ctx.fillStyle = s.bg;
     ctx.fillRect(0, 0, 512, 512);
 
-    // Vertical glowing architectural light strip along edges
     ctx.fillStyle = s.neon;
     ctx.fillRect(0, 0, 8, 512);
     ctx.fillRect(504, 0, 8, 512);
@@ -75,20 +74,16 @@ export class TextureGenerator {
 
         const isLit = Math.random() < s.litProb;
         if (isLit) {
-          // Vivid luminous window gradient with warm/cool interior
           const grad = ctx.createLinearGradient(x, y, x, y + winH);
           grad.addColorStop(0, '#ffffff');
           grad.addColorStop(0.3, s.glass);
           grad.addColorStop(1, s.frame);
           ctx.fillStyle = grad;
         } else {
-          // Reflected dark glass
           ctx.fillStyle = '#060911';
         }
 
         ctx.fillRect(x, y, winW, winH);
-
-        // Window border frame
         ctx.strokeStyle = s.frame;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(x, y, winW, winH);
@@ -135,19 +130,78 @@ export class TextureGenerator {
     return texture;
   }
 
-  // 4. Authentic Realistic Gauge Cluster Texture (Matching Reference Image)
+  // 4. Vibrant Grass Detail Texture
+  static createGrassTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#2f6d2f';
+    ctx.fillRect(0, 0, 512, 512);
+
+    for (let i = 0; i < 2000; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      const h = 4 + Math.random() * 10;
+      ctx.strokeStyle = Math.random() > 0.4 ? '#44a844' : '#1f4e1f';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + (Math.random() - 0.5) * 4, y - h);
+      ctx.stroke();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(24, 24);
+    return texture;
+  }
+
+  // 5. Overhead Highway Directional Sign Texture (Interstate Style)
+  static createHighwaySignTexture(title, leftDest, rightDest) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 160;
+    const ctx = canvas.getContext('2d');
+
+    // Interstate Green Background
+    ctx.fillStyle = '#065f46';
+    ctx.fillRect(0, 0, 512, 160);
+
+    // White Border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(6, 6, 500, 148);
+
+    // Header Title
+    ctx.fillStyle = '#facc15';
+    ctx.font = 'bold 22px Orbitron, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(title || 'HIGHWAY RING A-1', 256, 42);
+
+    // Left & Right Destination Lines
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px "Exo 2", sans-serif';
+    ctx.fillText(`⬅ ${leftDest || 'METROPOLIS DOWNTOWN 2 KM'}`, 256, 85);
+    ctx.fillText(`${rightDest || 'AIRPORT & COAST 5 KM'} ➡`, 256, 125);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  }
+
+  // 6. Authentic Realistic Gauge Cluster Texture
   static createDashboardTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Deep matte black curved instrument binnacle
     ctx.fillStyle = '#05070c';
     ctx.fillRect(0, 0, 1024, 512);
 
     const drawSportDial = (cx, cy, r, label, numbers, maxAngle, needleValAngle) => {
-      // Outer silver bevel
       const grad = ctx.createRadialGradient(cx, cy, r * 0.8, cx, cy, r);
       grad.addColorStop(0, '#0a0e17');
       grad.addColorStop(0.85, '#1e293b');
@@ -162,14 +216,12 @@ export class TextureGenerator {
       ctx.lineWidth = 4;
       ctx.stroke();
 
-      // Inner Red Sport Arc
       ctx.strokeStyle = '#ff0033';
       ctx.lineWidth = 8;
       ctx.beginPath();
       ctx.arc(cx, cy, r * 0.85, 0.75 * Math.PI, maxAngle);
       ctx.stroke();
 
-      // White tick marks & numbers
       for (let i = 0; i < numbers.length; i++) {
         const a = 0.75 * Math.PI + (i / (numbers.length - 1)) * (1.5 * Math.PI);
         const x1 = cx + Math.cos(a) * (r * 0.72);
@@ -184,7 +236,6 @@ export class TextureGenerator {
         ctx.lineTo(x2, y2);
         ctx.stroke();
 
-        // Numbers
         const numX = cx + Math.cos(a) * (r * 0.58);
         const numY = cy + Math.sin(a) * (r * 0.58);
         ctx.fillStyle = '#ffffff';
@@ -194,7 +245,6 @@ export class TextureGenerator {
         ctx.fillText(numbers[i], numX, numY);
       }
 
-      // Red Luminous Needle
       const needleAngle = needleValAngle || (0.75 * Math.PI + 0.6);
       const nx = cx + Math.cos(needleAngle) * (r * 0.78);
       const ny = cy + Math.sin(needleAngle) * (r * 0.78);
@@ -209,7 +259,6 @@ export class TextureGenerator {
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Needle hub
       ctx.fillStyle = '#111827';
       ctx.beginPath();
       ctx.arc(cx, cy, 18, 0, Math.PI * 2);
@@ -218,19 +267,14 @@ export class TextureGenerator {
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // Label
       ctx.fillStyle = '#94a3b8';
       ctx.font = 'bold 16px "Orbitron", sans-serif';
       ctx.fillText(label, cx, cy + 50);
     };
 
-    // ── Left Dial: Tachometer (0-8 x1000rpm) ──
     drawSportDial(240, 270, 160, 'x1000rpm', ['0', '1', '2', '3', '4', '5', '6', '7', '8'], 2.25 * Math.PI, 0.75 * Math.PI + 0.9);
-
-    // ── Right Dial: Speedometer (0-220 km/h) ──
     drawSportDial(784, 270, 160, 'km/h', ['0', '20', '40', '60', '80', '100', '140', '180', '220'], 2.25 * Math.PI, 0.75 * Math.PI + 1.1);
 
-    // ── Center LCD Display Cluster (Trip, ODO, Gear, Warning Symbols) ──
     const drawCenterDisplay = (cx, cy) => {
       ctx.fillStyle = '#0a101f';
       ctx.strokeStyle = '#38bdf8';
@@ -240,7 +284,6 @@ export class TextureGenerator {
       ctx.fill();
       ctx.stroke();
 
-      // Green Indicator Arrows (Left & Right)
       ctx.fillStyle = '#00ff44';
       ctx.shadowColor = '#00ff44';
       ctx.shadowBlur = 8;
@@ -256,30 +299,25 @@ export class TextureGenerator {
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      // STOP Indicator
       ctx.fillStyle = '#ff0033';
       ctx.font = 'bold 16px Orbitron, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('• STOP •', cx, cy - 95);
 
-      // Digital Speed / Trip
       ctx.fillStyle = '#38bdf8';
       ctx.font = 'bold 36px Orbitron, sans-serif';
       ctx.fillText('89', cx, cy - 40);
       ctx.font = '14px Orbitron, sans-serif';
       ctx.fillText('KM/H  •  GEAR 4', cx, cy - 10);
 
-      // Odometer readout
       ctx.fillStyle = '#f8fafc';
       ctx.font = '18px monospace';
       ctx.fillText('ODO 088888 km', cx, cy + 25);
 
-      // Status Icons (Battery, Oil, Engine, Check)
       ctx.fillStyle = '#ffaa00';
       ctx.font = '22px sans-serif';
       ctx.fillText('⚠️   🔋   🛢️   ⚙️', cx, cy + 68);
 
-      // Fuel & Temp bars
       ctx.fillStyle = '#00ffcc';
       ctx.fillRect(cx - 100, cy + 95, 80, 8);
       ctx.fillStyle = '#ff4400';
@@ -296,7 +334,7 @@ export class TextureGenerator {
     return texture;
   }
 
-  // 5. Center Console Infotainment Touchscreen Tablet Texture
+  // 7. Center Console Infotainment Touchscreen Tablet Texture
   static createInfotainmentTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
