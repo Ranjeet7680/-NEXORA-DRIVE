@@ -2,50 +2,159 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <!-- Mobile-first viewport: full screen, no zooming, notch-safe -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+  <!-- PWA / Full-screen App Meta -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NEXORA DRIVE" />
+  <meta name="theme-color" content="#050b14" />
+  <meta name="application-name" content="NEXORA DRIVE" />
+
+  <!-- Screen Orientation lock hint (works in some browsers) -->
+  <meta name="screen-orientation" content="landscape" />
+
   <title>NEXORA DRIVE — First-Person Open-World Driving Simulator</title>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;800;900&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
 
   <style>
+    /* ═══════════════════════════════════════════
+       NEXORA DRIVE — Mobile-First Full-Screen CSS
+       ═══════════════════════════════════════════ */
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
       font-family: 'Exo 2', sans-serif;
+      touch-action: manipulation;
     }
 
-    body, html {
+    html {
+      height: 100%;
+      height: -webkit-fill-available;
+      overflow: hidden;
+    }
+
+    body {
       width: 100%;
       height: 100%;
+      height: -webkit-fill-available;
       overflow: hidden;
       background-color: #050b14;
       color: #ffffff;
+      /* No address bar — fill entire screen */
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
     }
 
     #app {
       width: 100%;
       height: 100%;
       position: relative;
+      overflow: hidden;
+      /* Notch / safe-area aware padding */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
     }
 
     canvas {
       display: block;
-      width: 100%;
-      height: 100%;
+      width: 100% !important;
+      height: 100% !important;
+      position: absolute;
+      top: 0; left: 0;
+      touch-action: none;
+    }
+
+    /* ───────────────────────────────────────────
+       PORTRAIT ROTATE OVERLAY
+       Shows a full-screen overlay when in portrait
+       asking user to rotate to landscape
+       ─────────────────────────────────────────── */
+    #rotateOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 9999;
+      background: #050b14;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      text-align: center;
+    }
+
+    #rotateOverlay .rotate-icon {
+      font-size: 5rem;
+      animation: rotatePulse 1.2s ease-in-out infinite;
+    }
+    @keyframes rotatePulse {
+      0%   { transform: rotate(0deg) scale(1); }
+      50%  { transform: rotate(90deg) scale(1.15); }
+      100% { transform: rotate(0deg) scale(1); }
+    }
+    #rotateOverlay h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.4rem;
+      color: #00f0ff;
+      letter-spacing: 2px;
+    }
+    #rotateOverlay p {
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+
+    /* Show overlay ONLY on mobile portrait */
+    @media (max-width: 768px) and (orientation: portrait) {
+      #rotateOverlay { display: flex !important; }
+      #app { display: none; }
+    }
+
+    /* ───────────────────────────────────────────
+       FULLSCREEN BUTTON
+       ─────────────────────────────────────────── */
+    #fullscreenBtn {
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top, 12px));
+      right: max(12px, env(safe-area-inset-right, 12px));
+      z-index: 9000;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: rgba(5, 11, 20, 0.75);
+      border: 1.5px solid rgba(0, 240, 255, 0.5);
+      color: #00f0ff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+      transition: background 0.2s;
+    }
+    #fullscreenBtn:active { background: rgba(0, 240, 255, 0.25); }
+
+    /* Hide fullscreen btn on desktop — already full screen */
+    @media (min-width: 1024px) {
+      #fullscreenBtn { display: none; }
     }
 
     /* AI Loading Screen Overlay */
     .loading-overlay {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       z-index: 1000;
       display: flex;
       justify-content: center;
@@ -169,83 +278,114 @@
       padding: 10px;
     }
 
-    .hud-top-bar {
-      display: flex;
-      gap: 8px;
-      pointer-events: auto;
-      flex-wrap: wrap;
+    /* ═══════════════════════════════════════════
+       HUD LAYOUT — Safe-Area + Mobile First
+       ═══════════════════════════════════════════ */
+    .game-hud {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 100;
     }
 
+    /* ── TOP BAR ──────────────────────────────── */
+    .hud-top-bar {
+      position: absolute;
+      top: max(8px, env(safe-area-inset-top, 8px));
+      left: max(8px, env(safe-area-inset-left, 8px));
+      right: max(50px, calc(env(safe-area-inset-right, 8px) + 50px));
+      display: flex;
+      gap: 5px;
+      pointer-events: auto;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      align-items: center;
+    }
+    .hud-top-bar::-webkit-scrollbar { display: none; }
+
     .hud-item {
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(8px);
-      padding: 6px 12px;
+      background: rgba(5, 11, 20, 0.82);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 5px 10px;
       border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      font-size: 0.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 0.72rem;
       font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .hud-btn {
-      background: rgba(15, 23, 42, 0.75);
-      border: 1px solid rgba(0, 240, 255, 0.4);
+      background: rgba(5, 11, 20, 0.82);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 240, 255, 0.45);
       color: #00f0ff;
-      padding: 6px 12px;
+      padding: 5px 10px;
       border-radius: 6px;
       cursor: pointer;
       font-weight: 700;
-      font-size: 0.8rem;
-      transition: background 0.2s;
+      font-size: 0.7rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      /* Minimum touch target size */
+      min-height: 36px;
+      min-width: 36px;
     }
+    .hud-btn:active { background: rgba(0, 240, 255, 0.22); }
 
-    .hud-btn:hover {
-      background: rgba(0, 240, 255, 0.2);
-    }
-
-    /* GPS Banner */
+    /* ── GPS BANNER ───────────────────────────── */
     .hud-gps-banner {
       position: absolute;
-      top: 50px;
+      top: max(48px, calc(env(safe-area-inset-top, 0px) + 44px));
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(5, 11, 20, 0.88);
       border: 1px solid #00f0ff;
       color: #00f0ff;
-      padding: 6px 16px;
-      border-radius: 16px;
+      padding: 5px 14px;
+      border-radius: 14px;
       font-weight: 700;
-      font-size: 0.8rem;
-      pointer-events: auto;
+      font-size: 0.75rem;
+      pointer-events: none;
+      white-space: nowrap;
+      max-width: 80vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    /* HUD Gauge Cluster */
+    /* ── GAUGE CLUSTER (bottom-right) ─────────── */
     .hud-gauge-cluster {
       position: absolute;
-      bottom: 12px;
-      right: 12px;
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(10px);
+      bottom: max(12px, env(safe-area-inset-bottom, 12px));
+      right: max(12px, env(safe-area-inset-right, 12px));
+      background: rgba(5, 11, 20, 0.82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(0, 240, 255, 0.3);
-      padding: 12px 16px;
+      padding: 10px 14px;
       border-radius: 14px;
       text-align: center;
-      width: 140px;
+      width: 130px;
+      pointer-events: none;
     }
 
-    .speedo-dial {
-      position: relative;
-    }
+    .speedo-dial { position: relative; }
 
     .speed-number {
       font-family: 'Orbitron', sans-serif;
-      font-size: 2.2rem;
+      font-size: 2.0rem;
       font-weight: 900;
       color: #00f0ff;
       line-height: 1;
     }
 
     .speed-unit {
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       color: #94a3b8;
       letter-spacing: 1px;
     }
@@ -276,100 +416,161 @@
       width: 20%;
       height: 100%;
       background: linear-gradient(90deg, #00ffcc, #ff0055);
+      transition: width 0.1s linear;
     }
 
-    /* Mini-Map */
+    /* Stat bars (Fuel / NOS / HP) */
+    .v-stats { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .v-stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.55rem;
+      font-weight: 700;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+    .v-stat-item span { width: 26px; text-align: right; flex-shrink: 0; }
+    .bar {
+      flex: 1;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22cc44, #00ffcc);
+      border-radius: 3px;
+      transition: width 0.2s ease, background 0.4s ease;
+    }
+    .fill.health { background: linear-gradient(90deg, #ff4400, #ff9900); }
+    .fill.nitro  { background: linear-gradient(90deg, #0066ff, #00ccff); }
+
+    /* ── MINI-MAP ─────────────────────────────── */
     .hud-minimap-container {
       position: absolute;
-      bottom: 12px;
-      left: 12px;
-      background: rgba(15, 23, 42, 0.75);
+      bottom: max(12px, env(safe-area-inset-bottom, 12px));
+      left: max(12px, env(safe-area-inset-left, 12px));
+      background: rgba(5, 11, 20, 0.82);
       border: 2px solid #00f0ff;
       border-radius: 50%;
       padding: 2px;
       overflow: hidden;
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.3);
+      pointer-events: none;
+    }
+    .minimap-label {
+      text-align: center;
+      font-size: 0.5rem;
+      color: #00f0ff;
+      letter-spacing: 1px;
+      margin-top: 3px;
+      font-family: 'Orbitron', sans-serif;
+      pointer-events: none;
     }
 
-    /* Center Controls Toggles */
+    /* ── CENTER CONTROLS ──────────────────────── */
     .hud-center-toggles {
       position: absolute;
-      bottom: 12px;
+      bottom: max(12px, env(safe-area-inset-bottom, 12px));
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 6px;
+      gap: 5px;
       pointer-events: auto;
     }
 
     .ctrl-pill-btn {
-      background: rgba(15, 23, 42, 0.75);
+      background: rgba(5, 11, 20, 0.82);
+      backdrop-filter: blur(8px);
       border: 1px solid rgba(255, 255, 255, 0.2);
       color: #ffffff;
       padding: 6px 10px;
-      border-radius: 16px;
+      border-radius: 14px;
       cursor: pointer;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
+      min-height: 36px;
+      white-space: nowrap;
+      transition: background 0.15s;
     }
+    .ctrl-pill-btn:active { background: rgba(255, 255, 255, 0.15); }
 
-    /* Mobile Pedals */
-    .mobile-touch-pedals {
-      position: absolute;
-      bottom: 12px;
-      right: 165px;
-      display: flex;
-      gap: 8px;
-      pointer-events: auto;
-    }
-
-    .pedal-btn {
-      width: 55px;
-      height: 70px;
-      border-radius: 10px;
-      border: 1.5px solid rgba(255, 255, 255, 0.2);
-      font-family: 'Orbitron', sans-serif;
-      font-weight: 700;
-      font-size: 0.65rem;
-      color: #ffffff;
-      cursor: pointer;
-    }
-
-    .gas-pedal      { background: rgba(0, 255, 204, 0.3); border-color: #00ffcc; }
-    .brake-pedal    { background: rgba(255, 0, 85, 0.3);  border-color: #ff0055; }
-    .handbrake-pedal{ background: rgba(255, 204, 0, 0.3); border-color: #ffcc00; width: 40px; }
-    .nitro-pedal    { background: rgba(0, 170, 255, 0.35); border-color: #00aaff; width: 48px; font-size: 0.6rem; }
-    .nitro-pedal:active { background: rgba(0, 255, 255, 0.7); box-shadow: 0 0 18px #00ffff; }
-
-    /* Drift Score HUD */
+    /* ── DRIFT SCORE HUD ──────────────────────── */
     .drift-score-hud {
       position: absolute;
-      top: 50%;
+      top: 42%;
       left: 50%;
       transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
       pointer-events: none;
-      animation: driftPulse 0.5s ease infinite alternate;
+      z-index: 110;
     }
     @keyframes driftPulse {
-      from { text-shadow: 0 0 10px #ff6600; }
-      to   { text-shadow: 0 0 30px #ff9900, 0 0 60px #ff6600; }
+      from { text-shadow: 0 0 10px #ff6600; filter: brightness(1); }
+      to   { text-shadow: 0 0 30px #ff9900, 0 0 60px #ff6600; filter: brightness(1.3); }
     }
-    .drift-label { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #ff9900; font-weight: 900; }
-    .drift-score { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; color: #ffcc00; font-weight: 900; line-height: 1; }
-    .drift-combo { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: #ff4400; font-weight: 700; }
+    .drift-label { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #ff9900; font-weight: 900; }
+    .drift-score { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #ffcc00; font-weight: 900; line-height: 1; animation: driftPulse 0.5s ease infinite alternate; }
+    .drift-combo { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #ff4400; font-weight: 700; }
 
-    /* Nitro fill colour */
-    .fill.nitro { background: linear-gradient(90deg, #0066ff, #00ccff); }
+    /* ── MOBILE TOUCH PEDALS (right side) ──────── */
+    .mobile-touch-pedals {
+      position: absolute;
+      bottom: max(10px, env(safe-area-inset-bottom, 10px));
+      right: max(155px, calc(env(safe-area-inset-right, 0px) + 155px));
+      display: flex;
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 7px;
+      pointer-events: auto;
+    }
 
-    /* Virtual Steering Wheel UI */
+    .pedal-btn {
+      width: 64px;
+      height: 80px;
+      border-radius: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 800;
+      font-size: 0.6rem;
+      color: #ffffff;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      line-height: 1.2;
+      transition: transform 0.08s, box-shadow 0.08s;
+      /* Prevent text selection on tap */
+      -webkit-touch-callout: none;
+    }
+    .pedal-btn:active {
+      transform: scale(0.93);
+    }
+
+    .gas-pedal       { background: rgba(0, 255, 204, 0.28); border-color: #00ffcc; box-shadow: 0 0 10px rgba(0,255,204,0.2); }
+    .gas-pedal:active{ background: rgba(0, 255, 204, 0.6);  box-shadow: 0 0 24px #00ffcc; }
+
+    .brake-pedal       { background: rgba(255, 0, 85, 0.28);  border-color: #ff0055; box-shadow: 0 0 10px rgba(255,0,85,0.2); }
+    .brake-pedal:active{ background: rgba(255, 0, 85, 0.65);  box-shadow: 0 0 24px #ff0055; }
+
+    .handbrake-pedal        { background: rgba(255, 204, 0, 0.28); border-color: #ffcc00; width: 48px; }
+    .handbrake-pedal:active { background: rgba(255, 204, 0, 0.65); box-shadow: 0 0 20px #ffcc00; }
+
+    .nitro-pedal        { background: rgba(0, 170, 255, 0.28); border-color: #00aaff; width: 54px; }
+    .nitro-pedal:active { background: rgba(0, 255, 255, 0.7);  box-shadow: 0 0 24px #00ffff; transform: scale(0.92); }
+
+    /* ── VIRTUAL STEERING WHEEL ───────────────── */
     .virtual-steering-wheel {
       position: absolute;
-      bottom: 12px;
-      left: 140px;
-      width: 100px;
-      height: 100px;
+      bottom: max(10px, env(safe-area-inset-bottom, 10px));
+      left: max(148px, calc(env(safe-area-inset-left, 0px) + 148px));
+      width: 112px;
+      height: 112px;
       pointer-events: auto;
     }
 
@@ -377,45 +578,73 @@
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      border: 8px solid #334155;
-      background: rgba(15, 23, 42, 0.5);
+      border: 9px solid #2a3a55;
+      background: radial-gradient(circle at 40% 35%, rgba(30,50,80,0.8), rgba(5,11,20,0.9));
       position: relative;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 0 20px rgba(0,0,0,0.8), inset 0 0 10px rgba(0,240,255,0.08);
       touch-action: none;
     }
 
     .wheel-hub {
       position: absolute;
-      top: 50%;
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      width: 28px;
-      height: 28px;
+      width: 30px; height: 30px;
       border-radius: 50%;
-      background: #00f0ff;
+      background: radial-gradient(circle at 40% 35%, #00f0ff, #0044aa);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.45rem;
+      font-size: 0.4rem;
       font-weight: 900;
       color: #050b14;
+      box-shadow: 0 0 8px #00f0ff;
     }
 
-    .wheel-spoke { position: absolute; background: #334155; }
-    .spoke-left { top: 50%; left: 0; width: 32px; height: 6px; transform: translateY(-50%); }
-    .spoke-right { top: 50%; right: 0; width: 32px; height: 6px; transform: translateY(-50%); }
-    .spoke-bottom { bottom: 0; left: 50%; width: 6px; height: 32px; transform: translateX(-50%); }
+    .wheel-spoke { position: absolute; background: #2a3a55; border-radius: 2px; }
+    .spoke-left   { top: 50%; left: 0;    width: 35px; height: 7px; transform: translateY(-50%); }
+    .spoke-right  { top: 50%; right: 0;   width: 35px; height: 7px; transform: translateY(-50%); }
+    .spoke-bottom { bottom: 0; left: 50%; width: 7px; height: 35px; transform: translateX(-50%); }
 
-    /* AI Copilot & Radio Player Floating Widget */
+    /* Left Steer Arrow Buttons alongside wheel */
+    .steer-left-btn, .steer-right-btn {
+      position: absolute;
+      bottom: max(10px, env(safe-area-inset-bottom, 10px));
+      width: 64px;
+      height: 80px;
+      border-radius: 14px;
+      border: 2px solid rgba(100,150,255,0.4);
+      background: rgba(20,40,80,0.45);
+      color: #aaddff;
+      font-size: 1.5rem;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      transition: transform 0.08s, background 0.1s;
+    }
+    .steer-left-btn  { left:  max(10px, env(safe-area-inset-left, 10px)); }
+    .steer-right-btn { left:  max(82px, calc(env(safe-area-inset-left, 0px) + 82px)); }
+    .steer-left-btn:active,
+    .steer-right-btn:active {
+      background: rgba(0, 120, 255, 0.55);
+      transform: scale(0.92);
+      box-shadow: 0 0 20px rgba(0, 180, 255, 0.5);
+    }
+
+    /* ── AI COPILOT WIDGET ────────────────────── */
     .copilot-hud-widget {
       position: absolute;
-      top: 55px;
-      right: 12px;
+      top: max(52px, calc(env(safe-area-inset-top, 0px) + 50px));
+      right: max(10px, env(safe-area-inset-right, 10px));
       z-index: 120;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       pointer-events: auto;
+      max-width: 240px;
     }
 
     .copilot-avatar-box {
@@ -433,15 +662,17 @@
       font-size: 1.1rem;
       cursor: pointer;
       box-shadow: 0 0 12px rgba(112, 0, 255, 0.6);
+      min-height: 40px;
     }
 
     .copilot-bubble {
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(5, 11, 20, 0.92);
       border: 1px solid #7000ff;
-      padding: 8px 12px;
+      padding: 7px 12px;
       border-radius: 10px;
-      font-size: 0.8rem;
-      max-width: 220px;
+      font-size: 0.78rem;
+      max-width: 200px;
+      backdrop-filter: blur(8px);
     }
 
     .copilot-prompt-bar {
@@ -836,10 +1067,187 @@
       font-size: 0.75rem;
       font-weight: 800;
     }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE MOBILE MEDIA QUERIES
+       ═══════════════════════════════════════════ */
+
+    /* ── Small phones (≤ 480px landscape) ─────── */
+    @media (max-width: 480px) and (orientation: landscape) {
+      .hud-top-bar { gap: 3px; }
+      .hud-item    { font-size: 0.6rem; padding: 4px 7px; }
+      .hud-btn     { font-size: 0.6rem; padding: 4px 7px; min-height: 30px; }
+
+      .hud-gauge-cluster { width: 110px; padding: 7px 10px; }
+      .speed-number      { font-size: 1.65rem; }
+
+      .pedal-btn         { width: 55px; height: 68px; font-size: 0.55rem; border-radius: 10px; }
+      .handbrake-pedal   { width: 40px; }
+      .nitro-pedal       { width: 46px; }
+
+      .virtual-steering-wheel { width: 90px; height: 90px; left: max(128px, calc(env(safe-area-inset-left, 0px) + 128px)); }
+      .steer-left-btn, .steer-right-btn { width: 55px; height: 68px; font-size: 1.2rem; }
+      .steer-right-btn { left: max(73px, calc(env(safe-area-inset-left, 0px) + 73px)); }
+
+      .hud-minimap-container { display: none; }
+      .ctrl-pill-btn { font-size: 0.6rem; padding: 5px 7px; }
+
+      .mobile-touch-pedals { right: max(125px, calc(env(safe-area-inset-right, 0px) + 125px)); gap: 5px; }
+    }
+
+    /* ── Medium phones (481–767px landscape) ──── */
+    @media (min-width: 481px) and (max-width: 767px) and (orientation: landscape) {
+      .hud-item    { font-size: 0.68rem; }
+      .hud-btn     { font-size: 0.68rem; }
+
+      .hud-gauge-cluster { width: 120px; }
+      .speed-number      { font-size: 1.85rem; }
+
+      .pedal-btn         { width: 60px; height: 75px; }
+      .handbrake-pedal   { width: 44px; }
+
+      .virtual-steering-wheel { width: 100px; height: 100px; }
+      .steer-left-btn, .steer-right-btn { width: 60px; height: 75px; }
+      .steer-right-btn { left: max(78px, calc(env(safe-area-inset-left, 0px) + 78px)); }
+    }
+
+    /* ── Tablets (768px+, landscape) ──────────── */
+    @media (min-width: 768px) and (orientation: landscape) {
+      .hud-item    { font-size: 0.8rem; padding: 6px 12px; }
+      .hud-btn     { font-size: 0.8rem; padding: 6px 12px; }
+
+      .hud-gauge-cluster { width: 150px; }
+      .speed-number      { font-size: 2.4rem; }
+
+      .pedal-btn         { width: 72px; height: 88px; font-size: 0.65rem; }
+      .handbrake-pedal   { width: 54px; }
+      .nitro-pedal       { width: 62px; }
+
+      .virtual-steering-wheel { width: 130px; height: 130px; left: max(172px, calc(env(safe-area-inset-left, 0px) + 172px)); }
+      .steer-left-btn, .steer-right-btn { width: 72px; height: 88px; font-size: 1.8rem; }
+      .steer-right-btn { left: max(92px, calc(env(safe-area-inset-left, 0px) + 92px)); }
+
+      .mobile-touch-pedals { right: max(175px, calc(env(safe-area-inset-right, 0px) + 175px)); }
+    }
+
+    /* ── Desktop / PC (hide touch controls) ─────── */
+    @media (min-width: 1024px) {
+      .steer-left-btn, .steer-right-btn { display: none; }
+      .mobile-touch-pedals { display: none; }
+      .hud-minimap-container { display: block !important; }
+    }
+
   </style>
 </head>
 <body>
+
+  <!-- Portrait → Landscape Rotate Overlay -->
+  <div id="rotateOverlay">
+    <div class="rotate-icon">📱</div>
+    <h2>ROTATE TO PLAY</h2>
+    <p>NEXORA DRIVE requires Landscape mode.<br>Please rotate your device.</p>
+  </div>
+
+  <!-- Fullscreen / Expand Button (mobile only) -->
+  <button id="fullscreenBtn" title="Fullscreen" aria-label="Toggle Fullscreen">⛶</button>
+
   <div id="app"></div>
+
   <script type="module" src="/src/main.js"></script>
+
+  <!-- Mobile: Orientation lock + Fullscreen API + Prevent bounce/scroll -->
+  <script>
+    // ── 1. Prevent all touch scroll/bounce on body ──────────────────────
+    document.addEventListener('touchmove', function (e) {
+      e.preventDefault();
+    }, { passive: false });
+
+    // ── 2. Fullscreen Button ────────────────────────────────────────────
+    const fsBtn = document.getElementById('fullscreenBtn');
+    if (fsBtn) {
+      fsBtn.addEventListener('click', async () => {
+        try {
+          const el = document.documentElement;
+          if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            // Enter fullscreen
+            if (el.requestFullscreen) {
+              await el.requestFullscreen({ navigationUI: 'hide' });
+            } else if (el.webkitRequestFullscreen) {
+              await el.webkitRequestFullscreen();
+            }
+            fsBtn.textContent = '⛶';
+            // Also try locking orientation to landscape
+            if (screen.orientation && screen.orientation.lock) {
+              try { await screen.orientation.lock('landscape'); } catch (_) {}
+            }
+          } else {
+            // Exit fullscreen
+            if (document.exitFullscreen) {
+              await document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+              await document.webkitExitFullscreen();
+            }
+            fsBtn.textContent = '⛶';
+          }
+        } catch (err) {
+          console.warn('Fullscreen error:', err);
+        }
+      });
+    }
+
+    // ── 3. Update fullscreen icon on change ────────────────────────────
+    document.addEventListener('fullscreenchange', () => {
+      if (fsBtn) {
+        fsBtn.textContent = document.fullscreenElement ? '✕' : '⛶';
+      }
+    });
+    document.addEventListener('webkitfullscreenchange', () => {
+      if (fsBtn) {
+        fsBtn.textContent = document.webkitFullscreenElement ? '✕' : '⛶';
+      }
+    });
+
+    // ── 4. Auto-request fullscreen on first touch (mobile) ────────────
+    let autoFsRequested = false;
+    document.addEventListener('touchstart', async function autoFs() {
+      if (autoFsRequested) return;
+      autoFsRequested = true;
+      document.removeEventListener('touchstart', autoFs);
+      try {
+        const el = document.documentElement;
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          if (el.requestFullscreen) {
+            await el.requestFullscreen({ navigationUI: 'hide' });
+          } else if (el.webkitRequestFullscreen) {
+            el.webkitRequestFullscreen();
+          }
+          if (screen.orientation && screen.orientation.lock) {
+            try { await screen.orientation.lock('landscape'); } catch (_) {}
+          }
+        }
+      } catch (_) {}
+    }, { passive: true });
+
+    // ── 5. Keep correct orientation when window resizes ───────────────
+    window.addEventListener('orientationchange', () => {
+      // Force renderer resize after orientation flip
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+    });
+
+    // ── 6. Wake lock — prevent screen from sleeping while driving ──────
+    (async () => {
+      if ('wakeLock' in navigator) {
+        try {
+          await navigator.wakeLock.request('screen');
+        } catch (_) {}
+        document.addEventListener('visibilitychange', async () => {
+          if (document.visibilityState === 'visible') {
+            try { await navigator.wakeLock.request('screen'); } catch (_) {}
+          }
+        });
+      }
+    })();
+  </script>
+
 </body>
 </html>
