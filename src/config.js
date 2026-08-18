@@ -36,12 +36,12 @@ export const VEHICLE_CONFIGS = {
     suspensionStiffness: 25,
     suspensionDamping: 4,
     cameraOffsets: {
-      fpv: { x: -0.35, y: 1.25, z: -0.1 },
+      fpv: { x: -0.30, y: 1.08, z: -0.28 },
       dash: { x: 0.0, y: 1.15, z: 0.3 },
-      wheel: { x: -0.35, y: 1.15, z: 0.25 },
-      hood: { x: 0.0, y: 1.0, z: 1.8 },
-      chase: { distance: 6.0, height: 2.4 },
-      cinematic: { distance: 11.0, height: 3.8 }
+      wheel: { x: -0.30, y: 1.05, z: 0.15 },
+      hood: { x: 0.0, y: 0.95, z: 1.8 },
+      chase: { distance: 5.5, height: 2.2 },
+      cinematic: { distance: 10.0, height: 3.5 }
     },
     dimensions: { length: 4.4, width: 1.9, height: 1.35 },
     wheelRadius: 0.35,

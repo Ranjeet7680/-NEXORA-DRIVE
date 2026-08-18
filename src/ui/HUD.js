@@ -1,4 +1,4 @@
-// In-Game Cyberpunk HUD with Interactive Real-Time Mini-Map & Complete Car Controls for NEXORA DRIVE
+// In-Game Cyber HUD Matching Reference Simulator Layout for NEXORA DRIVE
 
 export class HUD {
   constructor(container, callbacks) {
@@ -16,55 +16,72 @@ export class HUD {
     this.hudElement = document.createElement('div');
     this.hudElement.className = 'game-hud';
     this.hudElement.innerHTML = `
-      <!-- Top Bar: Biome, Weather, Clock, Credits & Main Navigation -->
-      <div class="hud-top-bar">
-        <div class="hud-item biome-tag" id="hudBiome"><span class="icon">🌆</span> Metropolis City</div>
-        <div class="hud-item weather-tag" id="hudWeather">☀️ Sunny</div>
-        <div class="hud-item time-tag" id="hudTime">14:00</div>
-        <div class="hud-item credits-tag" id="hudCredits">💳 $5,000</div>
-        <button class="hud-btn" id="btnGarage">🏁 Garage</button>
-        <button class="hud-btn" id="btnMap">🗺️ Map</button>
-        <button class="hud-btn" id="btnMissions">📋 Missions</button>
-        <button class="hud-btn" id="btnSettings">⚙️ Settings</button>
-        <button class="hud-btn" id="btnPause">⏸️</button>
+      <!-- Top Left: Pause Button & Navigation Menu (Matching Reference Image) -->
+      <div class="hud-top-left">
+        <button class="pause-square-btn" id="btnPause" title="Pause Game">⏸</button>
+        <div class="nav-pills-row">
+          <button class="hud-pill-btn" id="btnGarage">🏁 Garage</button>
+          <button class="hud-pill-btn" id="btnMap">🗺️ Map</button>
+          <button class="hud-pill-btn" id="btnMissions">📋 Missions</button>
+          <button class="hud-pill-btn" id="btnSettings">⚙️ Settings</button>
+        </div>
       </div>
 
-      <!-- Turn-by-Turn GPS Guidance Banner -->
+      <!-- Top Center: Clean GPS Turn Instruction Banner -->
       <div class="hud-gps-banner" id="gpsBanner">
-        🧭 <span id="gpsText">GPS Active: Proceed along open highway.</span>
+        🧭 <span id="gpsText">Follow open world highway ahead</span>
       </div>
 
-      <!-- Bottom Left: Interactive Mini-Map GPS -->
-      <div class="hud-minimap-container">
-        <canvas id="minimapCanvas" width="160" height="160"></canvas>
-        <div class="minimap-label">MINI MAP RADAR</div>
-      </div>
-
-      <!-- Bottom Center: Complete Car Lighting & Controls Dashboard -->
-      <div class="hud-center-toggles">
-        <button class="ctrl-pill-btn" id="btnIndicatorL" title="Left Turn Signal">◀</button>
-        <button class="ctrl-pill-btn" id="btnHeadlights">💡 Lights: <span id="headlightStateTxt">ON</span></button>
-        <button class="ctrl-pill-btn" id="btnHazard" title="Hazard Flasher">⚠️</button>
-        <button class="ctrl-pill-btn" id="btnIndicatorR" title="Right Turn Signal">▶</button>
-        <button class="ctrl-pill-btn" id="btnCamSwitch">📷 <span id="camName">1st Person</span></button>
-        <button class="ctrl-pill-btn" id="btnHorn">📣 Horn</button>
-        <button class="ctrl-pill-btn" id="btnRespawn">🔄 Unstuck</button>
-      </div>
-
-      <!-- Bottom Right: Speedometer Dial & RPM Gauge -->
-      <div class="hud-gauge-cluster">
-        <div class="rpm-bar-container">
-          <div class="rpm-bar-fill" id="rpmFill"></div>
+      <!-- Top Right: Digital Cluster Readout (Matching Reference Image 1) -->
+      <div class="hud-top-right-cluster">
+        <div class="digital-stat-row speed-row">
+          <span class="digital-val" id="topSpeedNum">0</span>
+          <span class="digital-unit">KMH</span>
         </div>
-        <div class="speedo-dial">
-          <div class="speed-number" id="speedNum">0</div>
-          <div class="speed-unit">KM/H</div>
-          <div class="gear-badge" id="gearNum">1</div>
+        <div class="digital-stat-row time-row">
+          <span class="stat-icon">⏱️</span>
+          <span class="digital-val-sm" id="hudTime">14:00</span>
         </div>
-        <div class="v-stats">
-          <div class="v-stat-item"><span>FUEL</span><div class="bar"><div class="fill" id="fuelFill" style="width: 100%;"></div></div></div>
-          <div class="v-stat-item"><span>⚡NOS</span><div class="bar"><div class="fill nitro" id="nitroFill" style="width: 100%;"></div></div></div>
-          <div class="v-stat-item"><span>HP</span><div class="bar"><div class="fill health" id="healthFill" style="width: 100%;"></div></div></div>
+        <div class="digital-stat-row credits-row">
+          <span class="stat-icon">💳</span>
+          <span class="digital-val-sm" id="hudCredits">$5,000</span>
+        </div>
+      </div>
+
+      <!-- Bottom Left: Steering Wheel & Mini-Map Radar -->
+      <div class="hud-bottom-left">
+        <div class="hud-minimap-container">
+          <canvas id="minimapCanvas" width="130" height="130"></canvas>
+          <div class="minimap-label">RADAR</div>
+        </div>
+      </div>
+
+      <!-- Bottom Center: Car Lighting & View Toolbar -->
+      <div class="hud-bottom-center-toolbar">
+        <button class="toolbar-btn" id="btnIndicatorL" title="Left Signal">◀</button>
+        <button class="toolbar-btn" id="btnHeadlights">💡 <span id="headlightStateTxt">ON</span></button>
+        <button class="toolbar-btn" id="btnHazard" title="Hazard Flasher">⚠️</button>
+        <button class="toolbar-btn" id="btnIndicatorR" title="Right Signal">▶</button>
+        <button class="toolbar-btn" id="btnCamSwitch">📷 <span id="camName">FPV</span></button>
+        <button class="toolbar-btn" id="btnHorn">📣</button>
+        <button class="toolbar-btn" id="btnRespawn">🔄</button>
+      </div>
+
+      <!-- Bottom Right: Authentic Metal-Grip Accelerator & Brake Pedals (Matching Image 1) -->
+      <div class="hud-bottom-right-pedals">
+        <div class="pedal-top-row">
+          <button class="pedal-aux-btn handbrake-btn" id="pedalHandbrake">P</button>
+          <button class="pedal-aux-btn nitro-btn" id="pedalNitro">⚡NOS</button>
+        </div>
+        <div class="pedal-main-row">
+          <button class="sim-pedal brake-sim-pedal" id="pedalBrake">
+            <div class="pedal-grip-dots">••••<br>••••<br>••••</div>
+            <div class="pedal-label">BRAKE<br>REV</div>
+          </button>
+          <button class="sim-pedal gas-sim-pedal" id="pedalGas">
+            <div class="pedal-grip-dots">••••<br>••••<br>••••<br>••••</div>
+            <div class="pedal-label">GAS</div>
+          </button>
         </div>
       </div>
 
@@ -73,14 +90,6 @@ export class HUD {
         <div class="drift-label">🔥 DRIFT</div>
         <div class="drift-score" id="driftScoreNum">0</div>
         <div class="drift-combo" id="driftComboNum">x0</div>
-      </div>
-
-      <!-- Mobile Touch Pedals -->
-      <div class="mobile-touch-pedals">
-        <button class="pedal-btn brake-pedal" id="pedalBrake">BRAKE / REV</button>
-        <button class="pedal-btn handbrake-pedal" id="pedalHandbrake">P</button>
-        <button class="pedal-btn nitro-pedal" id="pedalNitro">⚡NOS</button>
-        <button class="pedal-btn gas-pedal" id="pedalGas">GAS</button>
       </div>
     `;
 
@@ -147,62 +156,46 @@ export class HUD {
   }
 
   update(speed, rpm, gear, biome, timeStr, weather, credits, cameraName, targetPos, playerPos, playerRotation, turnInstruction, gameplayData) {
-    this.hudElement.querySelector('#speedNum').innerText = Math.floor(speed);
-    this.hudElement.querySelector('#gearNum').innerText  = gear;
-    this.hudElement.querySelector('#hudBiome').innerHTML = `<span class="icon">${biome.icon}</span> ${biome.name}`;
-    this.hudElement.querySelector('#hudWeather').innerText = `${weather.icon} ${weather.name}`;
-    this.hudElement.querySelector('#hudTime').innerText    = timeStr;
-    this.hudElement.querySelector('#hudCredits').innerText = `💳 $${credits.toLocaleString()}`;
-    this.hudElement.querySelector('#camName').innerText    = cameraName;
+    // 1. Digital Cluster Readout (Top-Right)
+    const topSpeed = this.hudElement.querySelector('#topSpeedNum');
+    if (topSpeed) topSpeed.innerText = Math.floor(speed);
+
+    const hudTime = this.hudElement.querySelector('#hudTime');
+    if (hudTime) hudTime.innerText = timeStr;
+
+    const hudCredits = this.hudElement.querySelector('#hudCredits');
+    if (hudCredits) hudCredits.innerText = `$${credits.toLocaleString()}`;
+
+    const camName = this.hudElement.querySelector('#camName');
+    if (camName) camName.innerText = cameraName;
 
     if (turnInstruction) {
-      this.hudElement.querySelector('#gpsText').innerText = turnInstruction;
+      const gpsText = this.hudElement.querySelector('#gpsText');
+      if (gpsText) gpsText.innerText = turnInstruction;
     }
 
-    const rpmPct = Math.min(100, Math.max(0, (rpm / 7500) * 100));
-    this.hudElement.querySelector('#rpmFill').style.width = `${rpmPct}%`;
-
-    // Lighting button states & indicators
+    // 2. Lighting & Active states
     if (gameplayData) {
       const headTxt = this.hudElement.querySelector('#headlightStateTxt');
       const headBtn = this.hudElement.querySelector('#btnHeadlights');
       if (headTxt && headBtn) {
         headTxt.innerText = gameplayData.headlightState.toUpperCase();
         headBtn.style.borderColor = gameplayData.headlightState !== 'off' ? '#00f0ff' : 'rgba(255,255,255,0.2)';
-        headBtn.style.boxShadow = gameplayData.headlightState === 'high' ? '0 0 14px #00f0ff' : 'none';
+        headBtn.style.boxShadow = gameplayData.headlightState === 'high' ? '0 0 12px #00f0ff' : 'none';
       }
 
       const hazBtn = this.hudElement.querySelector('#btnHazard');
       if (hazBtn) {
-        hazBtn.style.background = (gameplayData.indicatorState === 'hazard' && gameplayData.indicatorBlinkOn) ? '#ff0055' : 'rgba(5, 11, 20, 0.82)';
+        hazBtn.style.background = (gameplayData.indicatorState === 'hazard' && gameplayData.indicatorBlinkOn) ? '#ff0055' : 'rgba(15, 23, 42, 0.85)';
       }
 
       const indL = this.hudElement.querySelector('#btnIndicatorL');
       const indR = this.hudElement.querySelector('#btnIndicatorR');
       if (indL) {
-        indL.style.background = ((gameplayData.indicatorState === 'left' || gameplayData.indicatorState === 'hazard') && gameplayData.indicatorBlinkOn) ? '#ffaa00' : 'rgba(5, 11, 20, 0.82)';
+        indL.style.background = ((gameplayData.indicatorState === 'left' || gameplayData.indicatorState === 'hazard') && gameplayData.indicatorBlinkOn) ? '#ffaa00' : 'rgba(15, 23, 42, 0.85)';
       }
       if (indR) {
-        indR.style.background = ((gameplayData.indicatorState === 'right' || gameplayData.indicatorState === 'hazard') && gameplayData.indicatorBlinkOn) ? '#ffaa00' : 'rgba(5, 11, 20, 0.82)';
-      }
-
-      // Fuel, NOS, Health Bars
-      const fuelFill = this.hudElement.querySelector('#fuelFill');
-      if (fuelFill) {
-        fuelFill.style.width = `${Math.max(0, gameplayData.fuel)}%`;
-        fuelFill.style.background = gameplayData.fuel < 20 ? '#ff3300' : '#22cc44';
-      }
-
-      const nitroFill = this.hudElement.querySelector('#nitroFill');
-      if (nitroFill) {
-        nitroFill.style.width = `${Math.max(0, gameplayData.nitro)}%`;
-        nitroFill.style.background = gameplayData.nitroActive ? '#ffffff' : '#00aaff';
-        nitroFill.style.boxShadow  = gameplayData.nitroActive ? '0 0 12px #00ffff' : 'none';
-      }
-
-      const healthFill = this.hudElement.querySelector('#healthFill');
-      if (healthFill) {
-        healthFill.style.width = `${Math.max(0, gameplayData.damageHealth)}%`;
+        indR.style.background = ((gameplayData.indicatorState === 'right' || gameplayData.indicatorState === 'hazard') && gameplayData.indicatorBlinkOn) ? '#ffaa00' : 'rgba(15, 23, 42, 0.85)';
       }
 
       // Drift Score display
@@ -218,7 +211,7 @@ export class HUD {
       }
     }
 
-    // Render Real-Time Mini-Map Canvas
+    // 3. Render Mini-Map Canvas
     this.renderMiniMap(playerPos, playerRotation, targetPos);
   }
 
@@ -230,7 +223,7 @@ export class HUD {
     const h = this.miniMapCanvas.height;
     const cx = w / 2;
     const cy = h / 2;
-    const scale = 0.15; // Map scale
+    const scale = 0.14;
 
     ctx.clearRect(0, 0, w, h);
 
@@ -244,21 +237,17 @@ export class HUD {
     ctx.fillStyle = '#0a0f1d';
     ctx.fillRect(0, 0, w, h);
 
-    // Render World Terrain Biomes (relative to player position)
     const renderX = (wx) => cx + (wx - playerPos.x) * scale;
     const renderZ = (wz) => cy + (wz - playerPos.z) * scale;
 
     // Biome Region Shading
-    ctx.fillStyle = 'rgba(52, 94, 50, 0.3)'; // Forest
+    ctx.fillStyle = 'rgba(52, 94, 50, 0.3)';
     ctx.fillRect(renderX(-1200), renderZ(-1200), 1200 * scale, 1200 * scale);
-
-    ctx.fillStyle = 'rgba(238, 246, 255, 0.3)'; // Ice
+    ctx.fillStyle = 'rgba(238, 246, 255, 0.3)';
     ctx.fillRect(renderX(0), renderZ(0), 1200 * scale, 1200 * scale);
-
-    ctx.fillStyle = 'rgba(0, 119, 190, 0.4)'; // River water
+    ctx.fillStyle = 'rgba(0, 119, 190, 0.4)';
     ctx.fillRect(renderX(-1200), renderZ(0), 1200 * scale, 1200 * scale);
-
-    ctx.fillStyle = 'rgba(110, 102, 94, 0.3)'; // Mountains
+    ctx.fillStyle = 'rgba(110, 102, 94, 0.3)';
     ctx.fillRect(renderX(0), renderZ(-1200), 1200 * scale, 1200 * scale);
 
     // Draw Ring Highway (Radius 565)
@@ -268,7 +257,7 @@ export class HUD {
     ctx.arc(renderX(0), renderZ(0), 565 * scale, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.strokeStyle = '#ffcc00'; // Yellow center line
+    ctx.strokeStyle = '#ffcc00';
     ctx.lineWidth = 2 * scale;
     ctx.beginPath();
     ctx.arc(renderX(0), renderZ(0), 565 * scale, 0, Math.PI * 2);
@@ -290,54 +279,36 @@ export class HUD {
       ctx.stroke();
     }
 
-    // Draw Target GPS Marker
+    // Draw Target Marker
     if (targetPos) {
-      const tx = renderX(targetPos.x);
-      const tz = renderZ(targetPos.z);
-
       ctx.fillStyle = '#ff0055';
       ctx.beginPath();
-      ctx.arc(tx, tz, 5, 0, Math.PI * 2);
+      ctx.arc(renderX(targetPos.x), renderZ(targetPos.z), 5, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
     }
-
-    // Draw Garage Marker (Center Hub)
-    const gx = renderX(0);
-    const gz = renderZ(0);
-    ctx.fillStyle = '#00f0ff';
-    ctx.beginPath();
-    ctx.arc(gx, gz, 4, 0, Math.PI * 2);
-    ctx.fill();
 
     ctx.restore();
 
     // Outer Map Ring Border
     ctx.strokeStyle = '#00f0ff';
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 2.0;
     ctx.beginPath();
     ctx.arc(cx, cy, cx - 2, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Draw Player Vehicle Directional Arrow in Center (Rotated to vehicle heading)
+    // Draw Player Vehicle Directional Arrow in Center
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(playerRotation.y);
 
     ctx.fillStyle = '#00ffcc';
     ctx.beginPath();
-    ctx.moveTo(0, -9);
-    ctx.lineTo(7, 7);
-    ctx.lineTo(0, 3);
-    ctx.lineTo(-7, 7);
+    ctx.moveTo(0, -8);
+    ctx.lineTo(6, 6);
+    ctx.lineTo(0, 2);
+    ctx.lineTo(-6, 6);
     ctx.closePath();
     ctx.fill();
-
-    ctx.strokeStyle = '#050b14';
-    ctx.lineWidth = 1;
-    ctx.stroke();
 
     ctx.restore();
   }

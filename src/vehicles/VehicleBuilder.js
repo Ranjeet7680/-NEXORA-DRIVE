@@ -6,7 +6,7 @@ export class VehicleBuilder {
     const group = new THREE.Group();
     group.name = `vehicle_${config.id}`;
 
-    const colorHex = customUpgrades.color || (config.id === 'taxi' ? 0xffbb00 : (config.id === 'police' ? 0x111122 : 0x0066cc));
+    const colorHex = customUpgrades.color || (config.id === 'taxi' ? 0xffbb00 : (config.id === 'police' ? 0x111122 : 0xcc2200)); // Default sporty red like reference
     
     // PBR Material Finish Selection
     const finish = customUpgrades.finish || 'gloss';
@@ -25,17 +25,17 @@ export class VehicleBuilder {
     const glassMaterial = new THREE.MeshPhysicalMaterial({
       color: 0x88ccff,
       transparent: true,
-      opacity: 0.25,
-      roughness: 0.1,
-      metalness: 0.8,
-      transmission: 0.8,
+      opacity: 0.2,
+      roughness: 0.05,
+      metalness: 0.9,
+      transmission: 0.85,
       side: THREE.DoubleSide
     });
 
-    const darkMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 });
-    const chromeMaterial = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.1, metalness: 0.95 });
-    const lightMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffee, emissiveIntensity: 2.0 });
-    const brakeLightMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xcc0000, emissiveIntensity: 1.5 });
+    const darkMaterial = new THREE.MeshStandardMaterial({ color: 0x11141a, roughness: 0.7 });
+    const chromeMaterial = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.1, metalness: 0.95 });
+    const lightMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffee, emissiveIntensity: 2.5 });
+    const brakeLightMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xcc0000, emissiveIntensity: 2.0 });
     const indicatorMaterial = new THREE.MeshStandardMaterial({ color: 0xff8800, emissive: 0xff6600, emissiveIntensity: 0.0 });
 
     // Chassis Base Group
@@ -64,7 +64,7 @@ export class VehicleBuilder {
         break;
     }
 
-    // Add Wheels with custom Rim Size (15"-20")
+    // Add Wheels
     const rimSizeInches = customUpgrades.rimSize || 17;
     const rimScale = rimSizeInches / 17;
     
@@ -95,7 +95,6 @@ export class VehicleBuilder {
     });
 
     // Modular Underglow Neon Lights
-    let underglowMesh = null;
     if (customUpgrades.underglow && customUpgrades.underglow !== 'none') {
       const underColor = customUpgrades.underglowHex || 0x00f0ff;
       const glowGeo = new THREE.PlaneGeometry(config.dimensions.width * 1.2, config.dimensions.length * 1.1);
@@ -105,9 +104,9 @@ export class VehicleBuilder {
         transparent: true,
         opacity: 0.6
       });
-      underglowMesh = new THREE.Mesh(glowGeo, glowMat);
-      underglowMesh.position.set(0, 0.05, 0);
-      chassis.add(underglowMesh);
+      const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+      glowMesh.position.set(0, 0.05, 0);
+      chassis.add(glowMesh);
     }
 
     // ── Functional Real Dual Headlights (Spotlights) ──
@@ -115,8 +114,8 @@ export class VehicleBuilder {
     const headX = config.dimensions.width * 0.35;
     const headY = config.dimensions.height * 0.42;
 
-    const headlightLeft = new THREE.SpotLight(0xfffaed, 5.0, 90, Math.PI / 5, 0.3, 1.2);
-    const headlightRight = new THREE.SpotLight(0xfffaed, 5.0, 90, Math.PI / 5, 0.3, 1.2);
+    const headlightLeft = new THREE.SpotLight(0xfffaed, 5.5, 95, Math.PI / 5, 0.3, 1.2);
+    const headlightRight = new THREE.SpotLight(0xfffaed, 5.5, 95, Math.PI / 5, 0.3, 1.2);
     headlightLeft.castShadow = true;
     headlightRight.castShadow = true;
     headlightLeft.shadow.mapSize.width = 512;
@@ -159,9 +158,9 @@ export class VehicleBuilder {
     chassis.add(beamLeft);
     chassis.add(beamRight);
 
-    // ── Cockpit Interior Dome Ambient Light ──
+    // ── Cockpit Interior Dome Light ──
     const fpv = config.cameraOffsets.fpv;
-    const interiorLight = new THREE.PointLight(0x00f0ff, 1.2, 4.0);
+    const interiorLight = new THREE.PointLight(0x00f0ff, 0.8, 3.5);
     interiorLight.position.set(0, fpv.y + 0.2, fpv.z);
     chassis.add(interiorLight);
 
@@ -214,6 +213,12 @@ export class VehicleBuilder {
     lowerMesh.castShadow = true;
     chassis.add(lowerMesh);
 
+    // Hood Bonnet (Sleek red front)
+    const hoodGeo = new THREE.BoxGeometry(width * 0.94, height * 0.12, length * 0.4);
+    const hoodMesh = new THREE.Mesh(hoodGeo, bodyMat);
+    hoodMesh.position.set(0, height * 0.52, length * 0.28);
+    chassis.add(hoodMesh);
+
     // Roof & Pillars
     const cabinGeo = new THREE.BoxGeometry(width * 0.88, height * 0.45, length * 0.5);
     const cabinMesh = new THREE.Mesh(cabinGeo, bodyMat);
@@ -221,17 +226,17 @@ export class VehicleBuilder {
     chassis.add(cabinMesh);
 
     // Windshield Glass
-    const windshieldGeo = new THREE.BoxGeometry(width * 0.85, height * 0.4, 0.05);
+    const windshieldGeo = new THREE.BoxGeometry(width * 0.85, height * 0.42, 0.04);
     const windshield = new THREE.Mesh(windshieldGeo, glassMat);
-    windshield.position.set(0, height * 0.75, length * 0.17);
-    windshield.rotation.x = -0.35;
+    windshield.position.set(0, height * 0.74, length * 0.17);
+    windshield.rotation.x = -0.38;
     chassis.add(windshield);
 
     // Windshield Wiper Mesh
     const wiperGeo = new THREE.BoxGeometry(width * 0.5, 0.03, 0.03);
     const wiperMesh = new THREE.Mesh(wiperGeo, darkMat);
     wiperMesh.name = 'wiperMesh';
-    wiperMesh.position.set(0, height * 0.62, length * 0.22);
+    wiperMesh.position.set(0, height * 0.58, length * 0.22);
     chassis.add(wiperMesh);
 
     // Headlights Mesh Bulbs (Front)
@@ -273,7 +278,7 @@ export class VehicleBuilder {
       chassis.add(spMesh);
     }
 
-    // Cockpit & Driver Hands
+    // Cockpit & Driver Hands & Tablet
     VehicleBuilder.addCockpitInterior(chassis, config, darkMat, chromeMat);
   }
 
@@ -319,69 +324,113 @@ export class VehicleBuilder {
     if (config.id === 'bike') return;
 
     const fpv = config.cameraOffsets.fpv;
+    const w = config.dimensions.width;
 
-    // Cockpit Main Dashboard Box
-    const dashGeo = new THREE.BoxGeometry(config.dimensions.width * 0.88, 0.28, 0.5);
+    // ── 1. Cockpit Dashboard Table ──
+    const dashGeo = new THREE.BoxGeometry(w * 0.95, 0.32, 0.6);
     const dashMesh = new THREE.Mesh(dashGeo, darkMat);
-    dashMesh.position.set(0, fpv.y - 0.28, fpv.z + 0.42);
+    dashMesh.position.set(0, fpv.y - 0.28, fpv.z + 0.45);
     chassis.add(dashMesh);
 
-    // ── High-Tech Dashboard Cluster Display Panel (Canvas Textured) ──
+    // ── 2. Realistic Dual Analog/Digital Sport Gauge Cluster (Directly in front of driver) ──
     const dashTex = TextureGenerator.createDashboardTexture();
-    const clusterGeo = new THREE.PlaneGeometry(config.dimensions.width * 0.75, 0.24);
+    const clusterGeo = new THREE.PlaneGeometry(0.72, 0.28);
     const clusterMat = new THREE.MeshBasicMaterial({ map: dashTex, transparent: true });
     const clusterMesh = new THREE.Mesh(clusterGeo, clusterMat);
-    clusterMesh.position.set(0, fpv.y - 0.24, fpv.z + 0.25);
-    clusterMesh.rotation.x = -0.15;
+    clusterMesh.position.set(fpv.x, fpv.y - 0.12, fpv.z + 0.30);
+    clusterMesh.rotation.x = -0.12;
     chassis.add(clusterMesh);
 
-    // ── AC Vents (Chrome grill slats) ──
-    const ventGeo = new THREE.BoxGeometry(0.16, 0.06, 0.02);
+    // ── 3. Infotainment Touchscreen Tablet on Right Dashboard (Matching Image 1) ──
+    const infoTex = TextureGenerator.createInfotainmentTexture();
+    const infoGeo = new THREE.BoxGeometry(0.42, 0.30, 0.03);
+    const infoMat = new THREE.MeshBasicMaterial({ map: infoTex });
+    const infoMesh = new THREE.Mesh(infoGeo, infoMat);
+    infoMesh.position.set(0.38, fpv.y - 0.10, fpv.z + 0.36);
+    infoMesh.rotation.y = -0.22; // Angled toward driver
+    infoMesh.rotation.x = -0.08;
+    chassis.add(infoMesh);
+
+    // ── 4. Rear-View Mirror at Top Center Windshield (Matching Image 1) ──
+    const mirrorFrameGeo = new THREE.BoxGeometry(0.36, 0.11, 0.03);
+    const mirrorFrame = new THREE.Mesh(mirrorFrameGeo, darkMat);
+    mirrorFrame.position.set(0, fpv.y + 0.26, fpv.z + 0.25);
+    mirrorFrame.rotation.x = 0.15;
+    
+    // Mirror glass reflective face
+    const mirrorGlassGeo = new THREE.PlaneGeometry(0.34, 0.09);
+    const mirrorGlassMat = new THREE.MeshStandardMaterial({ color: 0x99ccff, roughness: 0.1, metalness: 0.95 });
+    const mirrorGlass = new THREE.Mesh(mirrorGlassGeo, mirrorGlassMat);
+    mirrorGlass.position.set(0, 0, -0.016);
+    mirrorGlass.rotation.y = Math.PI;
+    mirrorFrame.add(mirrorGlass);
+    chassis.add(mirrorFrame);
+
+    // ── 5. Circular Chrome AC Vents (Left and Right of Dashboard) ──
+    const ventGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.04, 16);
+    ventGeo.rotateX(Math.PI / 2);
     const ventL = new THREE.Mesh(ventGeo, chromeMat);
     const ventR = new THREE.Mesh(ventGeo, chromeMat);
-    ventL.position.set(-config.dimensions.width * 0.25, fpv.y - 0.22, fpv.z + 0.26);
-    ventR.position.set(config.dimensions.width * 0.25, fpv.y - 0.22, fpv.z + 0.26);
+    ventL.position.set(-w * 0.42, fpv.y - 0.18, fpv.z + 0.32);
+    ventR.position.set(w * 0.42, fpv.y - 0.18, fpv.z + 0.32);
     chassis.add(ventL);
     chassis.add(ventR);
 
-    // ── Hazard & Engine Start Buttons on Dashboard ──
-    const startGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.02, 16);
-    startGeo.rotateX(Math.PI / 2);
-    const startMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.8 });
-    const startBtn = new THREE.Mesh(startGeo, startMat);
-    startBtn.position.set(0.12, fpv.y - 0.26, fpv.z + 0.25);
-    chassis.add(startBtn);
-
-    // ── Interactive Steering Wheel Mesh ──
+    // ── 6. Interactive Realistic Steering Wheel Mesh ──
     const wheelGroup = new THREE.Group();
     wheelGroup.name = 'steeringWheelMesh';
-    wheelGroup.position.set(fpv.x, fpv.y - 0.22, fpv.z + 0.32);
+    wheelGroup.position.set(fpv.x, fpv.y - 0.18, fpv.z + 0.22);
 
-    const ringGeo = new THREE.TorusGeometry(0.19, 0.028, 12, 32);
-    const ringMat = new THREE.MeshStandardMaterial({ color: 0x222226, roughness: 0.4, metalness: 0.2 });
+    const ringGeo = new THREE.TorusGeometry(0.19, 0.026, 12, 32);
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0x1f242d, roughness: 0.35, metalness: 0.2 });
     const ringMesh = new THREE.Mesh(ringGeo, ringMat);
     wheelGroup.add(ringMesh);
 
-    // Center Hub with Cyber Crest
-    const hubGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.04, 16);
+    // Center Hub & Cyber Silver Crest
+    const hubGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.04, 16);
     hubGeo.rotateX(Math.PI / 2);
-    const hubMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 0.8 });
+    const hubMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 0.6 });
     const hubMesh = new THREE.Mesh(hubGeo, hubMat);
     wheelGroup.add(hubMesh);
 
-    // Spokes
-    const spokeGeo = new THREE.BoxGeometry(0.32, 0.03, 0.02);
-    const spokeMesh = new THREE.Mesh(spokeGeo, darkMat);
-    wheelGroup.add(spokeMesh);
+    // 3 Silver Steering Wheel Spokes (T-spoke like reference image)
+    const spokeMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.3 });
+    const spokeL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 0.015), spokeMat);
+    const spokeR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 0.015), spokeMat);
+    const spokeB = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.14, 0.015), spokeMat);
+    spokeL.position.set(-0.09, 0, 0);
+    spokeR.position.set(0.09, 0, 0);
+    spokeB.position.set(0, -0.09, 0);
+    wheelGroup.add(spokeL);
+    wheelGroup.add(spokeR);
+    wheelGroup.add(spokeB);
 
-    // ── Driver Hands Mesh (Spheres holding steering wheel) ──
-    const handMat = new THREE.MeshStandardMaterial({ color: 0xc58c5c, roughness: 0.7 });
-    const handLeft = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), handMat);
-    const handRight = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), handMat);
-    handLeft.position.set(-0.17, 0, 0);
-    handRight.position.set(0.17, 0, 0);
-    wheelGroup.add(handLeft);
-    wheelGroup.add(handRight);
+    // ── 7. Detailed Driver Arms & Hands Holding Steering Wheel (Matching Image 1) ──
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xdb9e6f, roughness: 0.6 });
+    
+    // Left hand & forearm
+    const armLGeo = new THREE.CylinderGeometry(0.035, 0.045, 0.35, 12);
+    armLGeo.rotateX(Math.PI / 3);
+    const armL = new THREE.Mesh(armLGeo, skinMat);
+    armL.position.set(-0.24, -0.15, -0.08);
+
+    const handLGeo = new THREE.SphereGeometry(0.045, 12, 12);
+    const handL = new THREE.Mesh(handLGeo, skinMat);
+    handL.position.set(-0.16, 0, 0);
+    wheelGroup.add(handL);
+    chassis.add(armL);
+
+    // Right hand & forearm
+    const armRGeo = new THREE.CylinderGeometry(0.035, 0.045, 0.35, 12);
+    armRGeo.rotateX(Math.PI / 3);
+    const armR = new THREE.Mesh(armRGeo, skinMat);
+    armR.position.set(0.24, -0.15, -0.08);
+
+    const handRGeo = new THREE.SphereGeometry(0.045, 12, 12);
+    const handR = new THREE.Mesh(handRGeo, skinMat);
+    handR.position.set(0.16, 0, 0);
+    wheelGroup.add(handR);
+    chassis.add(armR);
 
     chassis.add(wheelGroup);
   }

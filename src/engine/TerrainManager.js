@@ -45,6 +45,7 @@ export class TerrainManager {
     this.createStreetLightsAndSigns();
     this.createBillboards();
     this.createFuelStations();
+    this.createHighwayScenery();
   }
 
   // Multi-frequency elevation noise for 5 biomes
@@ -832,6 +833,114 @@ export class TerrainManager {
     }
 
     return null;
+  }
+
+  createHighwayScenery() {
+    // Palm Trees & Hay Bales along the Highway (Matching Reference Image)
+    const palmTrunkMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.8 });
+    const palmFrondMat = new THREE.MeshStandardMaterial({ color: 0x228b22, roughness: 0.6, side: THREE.DoubleSide });
+    const hayMat = new THREE.MeshStandardMaterial({ color: 0xdfb15b, roughness: 0.9 });
+    const hutMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.8 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
+
+    // 1. Palm Trees along Ring Highway Outer & Inner shoulders
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 24) {
+      [596, 532].forEach((radius, rIdx) => {
+        const px = Math.sin(angle) * (radius + (Math.random() - 0.5) * 6);
+        const pz = Math.cos(angle) * (radius + (Math.random() - 0.5) * 6);
+        const py = this.getHeightAt(px, pz);
+
+        const palmGroup = new THREE.Group();
+
+        // Slender curved trunk
+        const trunkGeo = new THREE.CylinderGeometry(0.35, 0.55, 14, 8);
+        const trunk = new THREE.Mesh(trunkGeo, palmTrunkMat);
+        trunk.position.y = 7;
+        trunk.rotation.z = (Math.random() - 0.5) * 0.15;
+        palmGroup.add(trunk);
+
+        // 6 Radial curved palm fronds
+        for (let f = 0; f < 6; f++) {
+          const fAngle = (f / 6) * Math.PI * 2;
+          const frondGeo = new THREE.PlaneGeometry(3.5, 7.0);
+          frondGeo.rotateX(Math.PI / 3);
+          frondGeo.translate(0, 3.5, 0);
+          const frond = new THREE.Mesh(frondGeo, palmFrondMat);
+          frond.position.set(0, 14, 0);
+          frond.rotation.y = fAngle;
+          palmGroup.add(frond);
+        }
+
+        palmGroup.position.set(px, py, pz);
+        palmGroup.castShadow = true;
+        this.scene.add(palmGroup);
+
+        this.colliders.push({
+          type: 'circle',
+          x: px,
+          z: pz,
+          radius: 0.8,
+          height: 14
+        });
+      });
+    }
+
+    // 2. Hay Bales (Cylindrical golden straw bales resting on roadside matching Image 1)
+    const hayGeo = new THREE.CylinderGeometry(2.5, 2.5, 4.0, 16);
+    hayGeo.rotateZ(Math.PI / 2);
+
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 16) {
+      const hx = Math.sin(angle + 0.05) * 604;
+      const hz = Math.cos(angle + 0.05) * 604;
+      const hy = this.getHeightAt(hx, hz) + 2.0;
+
+      const hay = new THREE.Mesh(hayGeo, hayMat);
+      hay.position.set(hx, hy, hz);
+      hay.rotation.y = Math.random() * Math.PI;
+      hay.castShadow = true;
+      hay.receiveShadow = true;
+      this.scene.add(hay);
+
+      this.colliders.push({
+        type: 'circle',
+        x: hx,
+        z: hz,
+        radius: 2.5,
+        height: 4.0
+      });
+    }
+
+    // 3. Small Roadside Houses / Huts (Matching Image 1)
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
+      const hutX = Math.sin(angle) * 615;
+      const hutZ = Math.cos(angle) * 615;
+      const hutY = this.getHeightAt(hutX, hutZ);
+
+      const hutGroup = new THREE.Group();
+      const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(10, 6, 8), hutMat);
+      baseMesh.position.y = 3;
+      hutGroup.add(baseMesh);
+
+      const roofGeo = new THREE.ConeGeometry(8, 4, 4);
+      roofGeo.rotateY(Math.PI / 4);
+      const roofMesh = new THREE.Mesh(roofGeo, roofMat);
+      roofMesh.position.y = 8;
+      hutGroup.add(roofMesh);
+
+      hutGroup.position.set(hutX, hutY, hutZ);
+      hutGroup.rotation.y = angle + Math.PI;
+      hutGroup.castShadow = true;
+      this.scene.add(hutGroup);
+
+      this.colliders.push({
+        type: 'box',
+        minX: hutX - 6,
+        maxX: hutX + 6,
+        minZ: hutZ - 5,
+        maxZ: hutZ + 5,
+        height: 10
+      });
+    }
   }
 
   updateWater(deltaTime) {

@@ -7,81 +7,127 @@ export class TrafficManager {
     this.scene = scene;
     this.terrainManager = terrainManager;
     this.trafficVehicles = [];
-    this.pedestrians = [];
-    this.spawnRadius = 400;
-    this.maxTrafficCount = 15;
+    this.maxTrafficCount = 28; // Rich bustling traffic
+    this.spawnDistanceAhead = 250;
+    this.despawnDistanceBehind = 120;
   }
 
   init() {
-    // Pre-spawn initial traffic vehicles around the ring highway and city grid
-    const trafficTypes = ['car', 'taxi', 'bus', 'suv'];
-    
+    // Variety of realistic bot traffic models (Matching Image 1)
+    const trafficPresets = [
+      { type: 'suv', color: 0xffffff, name: 'White Pickup 4x4', speed: 65 },
+      { type: 'car', color: 0xcc1100, name: 'Red Sports Car', speed: 85 },
+      { type: 'car', color: 0x1d4ed8, name: 'Blue Classic Sedan', speed: 70 },
+      { type: 'truck', color: 0xf8fafc, name: 'Semi Truck Cargo', speed: 55 },
+      { type: 'taxi', color: 0xfacc15, name: 'Metro Taxi', speed: 75 },
+      { type: 'police', color: 0x0f172a, name: 'Pursuit Interceptor', speed: 90 },
+      { type: 'bus', color: 0x0284c7, name: 'Transit Bus', speed: 50 },
+      { type: 'suv', color: 0x334155, name: 'Dark SUV', speed: 72 }
+    ];
+
+    // Highway lanes offsets: Inner lane (+6m), Center lane (0m), Outer lane (-6m)
+    const laneOffsets = [-7, -2.5, 2.5, 7];
+
     for (let i = 0; i < this.maxTrafficCount; i++) {
-      const typeKey = trafficTypes[i % trafficTypes.length];
-      const config = VEHICLE_CONFIGS[typeKey];
-      
-      const colorHex = Math.floor(Math.random() * 0xffffff);
-      const mesh = VehicleBuilder.createVehicleMesh(config, colorHex);
+      const preset = trafficPresets[i % trafficPresets.length];
+      const config = VEHICLE_CONFIGS[preset.type] || VEHICLE_CONFIGS.car;
 
-      // Random position along ring road (radius 565)
-      const angle = (i / this.maxTrafficCount) * Math.PI * 2;
-      const x = Math.sin(angle) * 565;
-      const z = Math.cos(angle) * 565;
-      const y = this.terrainManager.getHeightAt(x, z) + config.wheelRadius;
+      const mesh = VehicleBuilder.createVehicleMesh(config, {
+        color: preset.color,
+        finish: 'gloss'
+      });
 
-      mesh.position.set(x, y, z);
-      mesh.rotation.y = angle + Math.PI / 2;
+      // Distribute cars along the ring highway (radius 565) and city main thoroughfares
+      const isHighway = i < 20;
+      let pos = new THREE.Vector3();
+      let rotY = 0;
+      let laneOffset = laneOffsets[i % laneOffsets.length];
+      let laneRadius = 565 + laneOffset;
+      let currentAngle = (i / 20) * Math.PI * 2;
+
+      if (isHighway) {
+        pos.x = Math.sin(currentAngle) * laneRadius;
+        pos.z = Math.cos(currentAngle) * laneRadius;
+        pos.y = this.terrainManager.getHeightAt(pos.x, pos.z) + config.wheelRadius + 0.05;
+        rotY = currentAngle + Math.PI / 2;
+      } else {
+        // City grid roads
+        const gridX = ((i % 4) - 2) * 120;
+        const gridZ = (Math.random() - 0.5) * 600;
+        pos.set(gridX + laneOffset, 0.5, gridZ);
+        rotY = (i % 2 === 0) ? 0 : Math.PI;
+      }
+
+      mesh.position.copy(pos);
+      mesh.rotation.y = rotY;
+
+      // Turn on traffic headlights & taillights
+      if (mesh.userData.headlights) {
+        mesh.userData.headlights.forEach(hl => { hl.intensity = 2.5; hl.distance = 45; });
+      }
 
       this.scene.add(mesh);
+
       this.trafficVehicles.push({
         mesh,
         config,
-        speed: 35 + Math.random() * 25, // km/h
-        laneAngle: angle,
-        radius: 565
+        speed: preset.speed + (Math.random() - 0.5) * 15, // km/h
+        isHighway,
+        laneAngle: currentAngle,
+        radius: laneRadius,
+        laneOffset,
+        direction: 1 // 1 = forward, -1 = reverse/oncoming
       });
-    }
-
-    // Pedestrians in City
-    const pedMat = new THREE.MeshStandardMaterial({ color: 0x3366cc });
-    const pedGeo = new THREE.CylinderGeometry(0.3, 0.3, 1.7, 8);
-
-    for (let i = 0; i < 20; i++) {
-      const pMesh = new THREE.Mesh(pedGeo, pedMat);
-      const px = -300 + Math.random() * 300;
-      const pz = -300 + Math.random() * 300;
-      pMesh.position.set(px, 0.85, pz);
-      this.scene.add(pMesh);
-      this.pedestrians.push({ mesh: pMesh, dir: (Math.random() > 0.5 ? 1 : -1) });
     }
   }
 
   update(deltaTime, playerPosition) {
-    // 1. Move AI Traffic along circuit paths
-    this.trafficVehicles.forEach(tv => {
-      tv.laneAngle += (tv.speed / tv.radius) * 0.05 * deltaTime;
-      const x = Math.sin(tv.laneAngle) * tv.radius;
-      const z = Math.cos(tv.laneAngle) * tv.radius;
-      const y = this.terrainManager.getHeightAt(x, z) + tv.config.wheelRadius;
+    if (!playerPosition) return;
 
-      tv.mesh.position.set(x, y, z);
-      tv.mesh.rotation.y = tv.laneAngle + Math.PI / 2;
+    const playerAngle = Math.atan2(playerPosition.x, playerPosition.z);
 
-      // Distance check to player for optimization/despawn re-positioning
-      if (playerPosition) {
-        const dist = tv.mesh.position.distanceTo(playerPosition);
-        if (dist > this.spawnRadius + 200) {
-          // Relocate ahead of player
-          tv.laneAngle = Math.atan2(playerPosition.x, playerPosition.z) + (Math.random() - 0.5) * 1.0;
+    this.trafficVehicles.forEach((tv, idx) => {
+      const speedMs = (tv.speed / 3.6);
+
+      if (tv.isHighway) {
+        // Advance angle along ring road
+        tv.laneAngle += (speedMs / tv.radius) * deltaTime * tv.direction;
+        
+        const x = Math.sin(tv.laneAngle) * tv.radius;
+        const z = Math.cos(tv.laneAngle) * tv.radius;
+        const y = this.terrainManager.getHeightAt(x, z) + tv.config.wheelRadius + 0.05;
+
+        tv.mesh.position.set(x, y, z);
+        tv.mesh.rotation.y = tv.laneAngle + (tv.direction > 0 ? Math.PI / 2 : -Math.PI / 2);
+
+        // Dynamic Recycle: Keep traffic dense around player position!
+        const distToPlayer = tv.mesh.position.distanceTo(playerPosition);
+        
+        // If traffic car gets too far behind or ahead, recycle it into player's forward view
+        if (distToPlayer > 300) {
+          // Spawn ahead of player along highway
+          const forwardOffset = (0.08 + Math.random() * 0.25);
+          tv.laneAngle = playerAngle + forwardOffset;
+          tv.radius = 565 + [-7, -2.5, 2.5, 7][idx % 4];
+        }
+      } else {
+        // Move along city grid straight lines
+        const forward = new THREE.Vector3(0, 0, 1).applyEuler(tv.mesh.rotation);
+        tv.mesh.position.addScaledVector(forward, speedMs * deltaTime);
+
+        if (Math.abs(tv.mesh.position.z) > 420) {
+          tv.mesh.position.z = -Math.sign(tv.mesh.position.z) * 400;
         }
       }
-    });
 
-    // 2. Animate Pedestrians
-    this.pedestrians.forEach(p => {
-      p.mesh.position.x += p.dir * deltaTime * 1.5;
-      if (Math.abs(p.mesh.position.x) > 350) {
-        p.dir *= -1;
+      // Wheels spin animation
+      const wheels = tv.mesh.userData.wheels;
+      if (wheels && wheels.length >= 2) {
+        wheels.forEach(w => {
+          if (w.children[0]) {
+            w.children[0].rotation.x += (speedMs * deltaTime) / tv.config.wheelRadius;
+          }
+        });
       }
     });
   }
