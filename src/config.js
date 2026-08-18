@@ -296,11 +296,11 @@ export const MISSIONS = [
 ];
 
 export const CAMERA_MODES = [
+  { id: 'chase', name: '3rd Person Chase', icon: '🎥' },
   { id: 'fpv', name: '1st Person Driver', icon: '💺' },
   { id: 'dash', name: 'Dashboard', icon: '🎛️' },
   { id: 'wheel', name: 'Steering Wheel', icon: '🎡' },
   { id: 'hood', name: 'Front Hood', icon: '🚘' },
-  { id: 'chase', name: '3rd Person Chase', icon: '🎥' },
   { id: 'cinematic', name: 'Wide Orbit', icon: '🚁' }
 ];
 

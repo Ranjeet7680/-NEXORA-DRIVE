@@ -4,17 +4,19 @@ import { CAMERA_MODES } from '../config.js';
 export class CameraManager {
   constructor(camera) {
     this.camera = camera;
-    this.currentModeIndex = 0; // Default FPV (1st person driver seat)
+    this.currentModeIndex = 0; // Default 3rd Person Chase (Full view of Car & 3D World)
     this.targetVehicleGroup = null;
     this.vehicleConfig = null;
 
     this.smoothPos = new THREE.Vector3();
     this.smoothLookAt = new THREE.Vector3();
+    this.initialized = false;
   }
 
   setVehicle(vehicleGroup, config) {
     this.targetVehicleGroup = vehicleGroup;
     this.vehicleConfig = config;
+    this.initialized = false;
   }
 
   getCurrentMode() {
@@ -99,17 +101,22 @@ export class CameraManager {
       }
 
       case 'chase': {
-        // 3rd Person Chase Camera
+        // 3rd Person Chase Camera (Full view of vehicle and open world)
         const off = offsets.chase;
         const idealCamPos = vPos.clone()
           .sub(forward.clone().multiplyScalar(off.distance))
           .add(new THREE.Vector3(0, off.height, 0));
 
-        const lookTarget = vPos.clone().add(new THREE.Vector3(0, 1.2, 0));
+        const lookTarget = vPos.clone().add(new THREE.Vector3(0, 1.1, 0));
 
-        // Smooth spring interpolation
-        this.smoothPos.lerp(idealCamPos, Math.min(1.0, deltaTime * 8.0));
-        this.smoothLookAt.lerp(lookTarget, Math.min(1.0, deltaTime * 10.0));
+        if (!this.initialized) {
+          this.smoothPos.copy(idealCamPos);
+          this.smoothLookAt.copy(lookTarget);
+          this.initialized = true;
+        } else {
+          this.smoothPos.lerp(idealCamPos, Math.min(1.0, deltaTime * 8.0));
+          this.smoothLookAt.lerp(lookTarget, Math.min(1.0, deltaTime * 10.0));
+        }
 
         this.camera.position.copy(this.smoothPos);
         this.camera.lookAt(this.smoothLookAt);
