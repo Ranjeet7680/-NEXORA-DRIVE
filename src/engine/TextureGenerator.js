@@ -38,7 +38,7 @@ export class TextureGenerator {
     return texture;
   }
 
-  // 2. High-Tech Glass & Concrete Skyscraper Building Facades
+  // 2. High-Tech Glass, Glowing Neon & Office Skyscraper Facades
   static createBuildingFacadeTexture(style = 0) {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -46,15 +46,20 @@ export class TextureGenerator {
     const ctx = canvas.getContext('2d');
 
     const styles = [
-      { bg: '#1e293b', glass: '#38bdf8', frame: '#0f172a', litProb: 0.65 },
-      { bg: '#0f172a', glass: '#facc15', frame: '#1e293b', litProb: 0.55 },
-      { bg: '#334155', glass: '#00f0ff', frame: '#1e293b', litProb: 0.70 },
-      { bg: '#27272a', glass: '#a1a1aa', frame: '#18181b', litProb: 0.40 }
+      { bg: '#0f172a', glass: '#38bdf8', frame: '#0284c7', litProb: 0.75, neon: '#00f0ff' }, // Electric Cyan Glass
+      { bg: '#090d16', glass: '#facc15', frame: '#b45309', litProb: 0.65, neon: '#f59e0b' }, // Warm Golden Office
+      { bg: '#18181b', glass: '#ec4899', frame: '#831843', litProb: 0.70, neon: '#f43f5e' }, // Cyber Magenta
+      { bg: '#0f172a', glass: '#34d399', frame: '#065f46', litProb: 0.60, neon: '#10b981' }  // Emerald Tech
     ];
     const s = styles[style % styles.length];
 
     ctx.fillStyle = s.bg;
     ctx.fillRect(0, 0, 512, 512);
+
+    // Vertical glowing architectural light strip along edges
+    ctx.fillStyle = s.neon;
+    ctx.fillRect(0, 0, 8, 512);
+    ctx.fillRect(504, 0, 8, 512);
 
     const cols = 8;
     const rows = 16;
@@ -70,15 +75,20 @@ export class TextureGenerator {
 
         const isLit = Math.random() < s.litProb;
         if (isLit) {
+          // Vivid luminous window gradient with warm/cool interior
           const grad = ctx.createLinearGradient(x, y, x, y + winH);
-          grad.addColorStop(0, s.glass);
-          grad.addColorStop(1, '#ffffff');
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.3, s.glass);
+          grad.addColorStop(1, s.frame);
           ctx.fillStyle = grad;
         } else {
-          ctx.fillStyle = '#090d16';
+          // Reflected dark glass
+          ctx.fillStyle = '#060911';
         }
 
         ctx.fillRect(x, y, winW, winH);
+
+        // Window border frame
         ctx.strokeStyle = s.frame;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(x, y, winW, winH);
@@ -136,7 +146,6 @@ export class TextureGenerator {
     ctx.fillStyle = '#05070c';
     ctx.fillRect(0, 0, 1024, 512);
 
-    // Chrome instrument bezels & outer rings
     const drawSportDial = (cx, cy, r, label, numbers, maxAngle, needleValAngle) => {
       // Outer silver bevel
       const grad = ctx.createRadialGradient(cx, cy, r * 0.8, cx, cy, r);
@@ -235,13 +244,11 @@ export class TextureGenerator {
       ctx.fillStyle = '#00ff44';
       ctx.shadowColor = '#00ff44';
       ctx.shadowBlur = 8;
-      // Left arrow
       ctx.beginPath();
       ctx.moveTo(cx - 90, cy - 90);
       ctx.lineTo(cx - 60, cy - 110);
       ctx.lineTo(cx - 60, cy - 70);
       ctx.fill();
-      // Right arrow
       ctx.beginPath();
       ctx.moveTo(cx + 90, cy - 90);
       ctx.lineTo(cx + 60, cy - 110);
@@ -289,18 +296,16 @@ export class TextureGenerator {
     return texture;
   }
 
-  // 5. Center Console Infotainment Touchscreen Tablet Texture (Matching Reference Image)
+  // 5. Center Console Infotainment Touchscreen Tablet Texture
   static createInfotainmentTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Glossy tablet bezel
     ctx.fillStyle = '#090d16';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Screen wallpaper gradient
     const grad = ctx.createLinearGradient(0, 0, 512, 512);
     grad.addColorStop(0, '#1e1b4b');
     grad.addColorStop(0.5, '#4338ca');
@@ -308,12 +313,10 @@ export class TextureGenerator {
     ctx.fillStyle = grad;
     ctx.fillRect(20, 20, 472, 472);
 
-    // Top status bar
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 16px Orbitron, sans-serif';
     ctx.fillText('16:30  •  NEXORA OS 4.0  •  5G LTE', 40, 55);
 
-    // App Grid Icons
     const apps = [
       { name: 'Navigation', icon: '🗺️', color: '#0284c7' },
       { name: 'Radio Music', icon: '🎵', color: '#7c3aed' },
@@ -337,24 +340,20 @@ export class TextureGenerator {
       const x = startX + col * gapX;
       const y = startY + row * gapY;
 
-      // Icon box
       ctx.fillStyle = app.color;
       ctx.beginPath();
       ctx.roundRect(x, y, 75, 75, 16);
       ctx.fill();
 
-      // Emoji
       ctx.font = '36px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(app.icon, x + 37, y + 50);
 
-      // Name
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px "Exo 2", sans-serif';
       ctx.fillText(app.name, x + 37, y + 94);
     });
 
-    // Bottom Media Player Strip
     ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
     ctx.beginPath();
     ctx.roundRect(40, 370, 432, 90, 16);

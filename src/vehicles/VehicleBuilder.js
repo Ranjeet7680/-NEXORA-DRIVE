@@ -94,42 +94,49 @@ export class VehicleBuilder {
       wheels.push(wheelGroup);
     });
 
-    // Modular Underglow Neon Lights
-    if (customUpgrades.underglow && customUpgrades.underglow !== 'none') {
-      const underColor = customUpgrades.underglowHex || 0x00f0ff;
-      const glowGeo = new THREE.PlaneGeometry(config.dimensions.width * 1.2, config.dimensions.length * 1.1);
-      glowGeo.rotateX(-Math.PI / 2);
-      const glowMat = new THREE.MeshBasicMaterial({
-        color: underColor,
-        transparent: true,
-        opacity: 0.6
-      });
-      const glowMesh = new THREE.Mesh(glowGeo, glowMat);
-      glowMesh.position.set(0, 0.05, 0);
-      chassis.add(glowMesh);
-    }
+    // ── 1. Real-Time Neon Underglow Kit (Always Active with Glow on Asphalt) ──
+    const underColor = customUpgrades.underglowHex || 0x00f0ff;
+    const glowGeo = new THREE.PlaneGeometry(config.dimensions.width * 1.3, config.dimensions.length * 1.15);
+    glowGeo.rotateX(-Math.PI / 2);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: underColor,
+      transparent: true,
+      opacity: 0.75,
+      side: THREE.DoubleSide
+    });
+    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+    glowMesh.position.set(0, 0.08, 0);
+    chassis.add(glowMesh);
 
-    // ── Functional Real Dual Headlights (Spotlights) ──
+    // Dynamic ground illumination under chassis
+    const underLightF = new THREE.PointLight(underColor, 2.5, 7.0, 1.2);
+    const underLightR = new THREE.PointLight(underColor, 2.5, 7.0, 1.2);
+    underLightF.position.set(0, 0.2, config.dimensions.length * 0.25);
+    underLightR.position.set(0, 0.2, -config.dimensions.length * 0.25);
+    chassis.add(underLightF);
+    chassis.add(underLightR);
+
+    // ── 2. Functional High-Power Dual Headlights (Spotlights) ──
     const headZ = config.dimensions.length * 0.5;
     const headX = config.dimensions.width * 0.35;
     const headY = config.dimensions.height * 0.42;
 
-    const headlightLeft = new THREE.SpotLight(0xfffaed, 5.5, 95, Math.PI / 5, 0.3, 1.2);
-    const headlightRight = new THREE.SpotLight(0xfffaed, 5.5, 95, Math.PI / 5, 0.3, 1.2);
+    const headlightLeft = new THREE.SpotLight(0xfffaee, 8.5, 120, Math.PI / 4.5, 0.25, 1.0);
+    const headlightRight = new THREE.SpotLight(0xfffaee, 8.5, 120, Math.PI / 4.5, 0.25, 1.0);
     headlightLeft.castShadow = true;
     headlightRight.castShadow = true;
-    headlightLeft.shadow.mapSize.width = 512;
-    headlightLeft.shadow.mapSize.height = 512;
-    headlightRight.shadow.mapSize.width = 512;
-    headlightRight.shadow.mapSize.height = 512;
+    headlightLeft.shadow.mapSize.width = 1024;
+    headlightLeft.shadow.mapSize.height = 1024;
+    headlightRight.shadow.mapSize.width = 1024;
+    headlightRight.shadow.mapSize.height = 1024;
 
     headlightLeft.position.set(-headX, headY, headZ);
     headlightRight.position.set(headX, headY, headZ);
 
     const targetLeft = new THREE.Object3D();
     const targetRight = new THREE.Object3D();
-    targetLeft.position.set(-headX, headY - 0.5, headZ + 40);
-    targetRight.position.set(headX, headY - 0.5, headZ + 40);
+    targetLeft.position.set(-headX, headY - 0.4, headZ + 50);
+    targetRight.position.set(headX, headY - 0.4, headZ + 50);
 
     chassis.add(targetLeft);
     chassis.add(targetRight);
@@ -139,14 +146,24 @@ export class VehicleBuilder {
     chassis.add(headlightLeft);
     chassis.add(headlightRight);
 
-    // ── Volumetric Light Beams (Forward Cones) ──
-    const beamGeo = new THREE.ConeGeometry(4.5, 35, 16, 1, true);
+    // Front Headlight Lens Flare Bulbs (Super bright white-yellow glow)
+    const haloGeo = new THREE.SphereGeometry(0.12, 16, 16);
+    const haloMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const haloL = new THREE.Mesh(haloGeo, haloMat);
+    const haloR = new THREE.Mesh(haloGeo, haloMat);
+    haloL.position.set(-headX, headY, headZ + 0.05);
+    haloR.position.set(headX, headY, headZ + 0.05);
+    chassis.add(haloL);
+    chassis.add(haloR);
+
+    // ── 3. Volumetric Forward Light Beams ──
+    const beamGeo = new THREE.ConeGeometry(5.5, 45, 16, 1, true);
     beamGeo.rotateX(Math.PI / 2);
-    beamGeo.translate(0, 0, 17.5);
+    beamGeo.translate(0, 0, 22.5);
     const beamMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+      color: 0xffffee,
       transparent: true,
-      opacity: 0.15,
+      opacity: 0.22,
       side: THREE.DoubleSide,
       depthWrite: false,
       blending: THREE.AdditiveBlending
@@ -158,18 +175,28 @@ export class VehicleBuilder {
     chassis.add(beamLeft);
     chassis.add(beamRight);
 
-    // ── Cockpit Interior Dome Light ──
+    // ── 4. Cockpit Interior Lighting (Dome light + Dashboard backlights) ──
     const fpv = config.cameraOffsets.fpv;
-    const interiorLight = new THREE.PointLight(0x00f0ff, 0.8, 3.5);
-    interiorLight.position.set(0, fpv.y + 0.2, fpv.z);
-    chassis.add(interiorLight);
+    const domeLight = new THREE.PointLight(0xfffaee, 1.2, 3.5);
+    domeLight.position.set(0, fpv.y + 0.22, fpv.z);
+    chassis.add(domeLight);
+
+    const dashBacklight = new THREE.PointLight(0x00f0ff, 1.5, 2.5);
+    dashBacklight.position.set(fpv.x, fpv.y - 0.1, fpv.z + 0.25);
+    chassis.add(dashBacklight);
+
+    // ── 5. Rear Taillight & Brake PointLight ──
+    const rearBrakeLight = new THREE.PointLight(0xff0000, 2.0, 6.0);
+    rearBrakeLight.position.set(0, headY, -config.dimensions.length * 0.52);
+    chassis.add(rearBrakeLight);
 
     group.userData = {
       chassis,
       wheels,
       headlights: [headlightLeft, headlightRight],
       lightBeams: [beamLeft, beamRight],
-      interiorLight,
+      interiorLight: domeLight,
+      rearBrakeLight,
       brakeLights: chassis.userData.brakeLights || [],
       indicators: chassis.userData.indicators || [],
       config,
@@ -178,6 +205,7 @@ export class VehicleBuilder {
     };
 
     return group;
+
   }
 
   static getWheelPositions(config) {

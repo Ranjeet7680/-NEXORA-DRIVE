@@ -381,8 +381,14 @@ export class TerrainManager {
       metalness: 0.5
     }));
 
-    const neonMat  = new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 1.2 });
-    const neonMatR = new THREE.MeshStandardMaterial({ color: 0xff4400, emissive: 0xff4400, emissiveIntensity: 1.0 });
+    // Neon emissive materials for building lighting
+    const neonCyan    = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 2.2 });
+    const neonGold    = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xffaa00, emissiveIntensity: 2.0 });
+    const neonMagenta = new THREE.MeshStandardMaterial({ color: 0xff007f, emissive: 0xff0055, emissiveIntensity: 2.2 });
+    const neonGreen   = new THREE.MeshStandardMaterial({ color: 0x00ff88, emissive: 0x00ff66, emissiveIntensity: 2.0 });
+    const lobbyGlowMat= new THREE.MeshStandardMaterial({ color: 0xffeedd, emissive: 0xffbb77, emissiveIntensity: 1.8 });
+
+    const crownColors = [neonCyan, neonGold, neonMagenta, neonGreen];
 
     // City grid: place buildings in 4 quadrants
     const gridOffsets = [
@@ -412,7 +418,6 @@ export class TerrainManager {
           this.buildings.push(bMesh);
 
           // ── PHYSICAL COLLIDER for this building (AABB Box) ──
-          // Block ke aar ya paar nahi hoga!
           this.colliders.push({
             type: 'box',
             minX: x - width * 0.5,
@@ -422,25 +427,38 @@ export class TerrainManager {
             height: height
           });
 
-          // Neon signs
-          if (Math.random() < 0.3) {
-            const signMat = Math.random() < 0.5 ? neonMat : neonMatR;
-            const signGeo = new THREE.BoxGeometry(width * 0.6, 3.5, 0.5);
+          // ── 1. Glowing Rooftop Architectural Crown Light ──
+          const crownMat = crownColors[Math.floor(Math.random() * crownColors.length)];
+          const crownGeo = new THREE.BoxGeometry(width + 1.2, 1.8, depth + 1.2);
+          const crownMesh = new THREE.Mesh(crownGeo, crownMat);
+          crownMesh.position.set(x, height + 0.9, z);
+          this.scene.add(crownMesh);
+
+          // ── 2. Ground Floor Glowing Entrance Lobby Glass ──
+          const lobbyGeo = new THREE.BoxGeometry(width * 0.6, 5.0, 1.0);
+          const lobby = new THREE.Mesh(lobbyGeo, lobbyGlowMat);
+          lobby.position.set(x, 2.6, z + depth * 0.5 + 0.2);
+          this.scene.add(lobby);
+
+          // ── 3. Neon Wall Billboard Signs ──
+          if (Math.random() < 0.45) {
+            const signMat = crownColors[Math.floor(Math.random() * crownColors.length)];
+            const signGeo = new THREE.BoxGeometry(width * 0.7, 4.5, 0.6);
             const sign = new THREE.Mesh(signGeo, signMat);
-            sign.position.set(x, height + 2, z + depth * 0.5 + 0.5);
+            sign.position.set(x, height * 0.65, z + depth * 0.5 + 0.4);
             this.scene.add(sign);
           }
         }
       }
     });
 
-    // Tall Landmark Skyscrapers
+    // Tall Landmark Skyscrapers with vertical light strips & beacon towers
     const landmarks = [
-      { x: -200, z: -200, h: 200, w: 38, d: 38, mat: buildingMaterials[0] },
-      { x:  200, z: -200, h: 175, w: 34, d: 52, mat: buildingMaterials[1] },
-      { x: -200, z:  200, h: 190, w: 42, d: 34, mat: buildingMaterials[2] },
-      { x:  200, z:  200, h: 180, w: 38, d: 38, mat: buildingMaterials[3] },
-      { x:    0, z: -300, h: 220, w: 45, d: 45, mat: buildingMaterials[0] },
+      { x: -200, z: -200, h: 200, w: 38, d: 38, mat: buildingMaterials[0], neon: neonCyan },
+      { x:  200, z: -200, h: 175, w: 34, d: 52, mat: buildingMaterials[1], neon: neonGold },
+      { x: -200, z:  200, h: 190, w: 42, d: 34, mat: buildingMaterials[2], neon: neonMagenta },
+      { x:  200, z:  200, h: 180, w: 38, d: 38, mat: buildingMaterials[3], neon: neonGreen },
+      { x:    0, z: -300, h: 220, w: 45, d: 45, mat: buildingMaterials[0], neon: neonCyan },
     ];
     landmarks.forEach(l => {
       const geo = new THREE.BoxGeometry(l.w, l.h, l.d);
@@ -460,21 +478,41 @@ export class TerrainManager {
         height: l.h
       });
 
-      if (l.h >= 200) {
-        const antGeo = new THREE.CylinderGeometry(0.5, 0.5, 40, 6);
-        const antMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.9 });
-        const ant = new THREE.Mesh(antGeo, antMat);
-        ant.position.set(l.x, l.h + 20, l.z);
-        this.scene.add(ant);
+      // Glowing Skyscraper Crown
+      const crownGeo = new THREE.BoxGeometry(l.w + 2, 4, l.d + 2);
+      const crown = new THREE.Mesh(crownGeo, l.neon);
+      crown.position.set(l.x, l.h + 2, l.z);
+      this.scene.add(crown);
 
-        const lightGeo = new THREE.SphereGeometry(1.5, 8, 8);
-        const lightMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 2.0 });
-        const light = new THREE.Mesh(lightGeo, lightMat);
-        light.position.set(l.x, l.h + 42, l.z);
-        this.scene.add(light);
-      }
+      // Vertical LED Corner Light Strips (running the full height of skyscraper)
+      [-l.w * 0.5, l.w * 0.5].forEach(ox => {
+        [-l.d * 0.5, l.d * 0.5].forEach(oz => {
+          const stripGeo = new THREE.BoxGeometry(0.8, l.h, 0.8);
+          const strip = new THREE.Mesh(stripGeo, l.neon);
+          strip.position.set(l.x + ox, l.h * 0.5, l.z + oz);
+          this.scene.add(strip);
+        });
+      });
+
+      // Rooftop Spire & Aircraft Warning Light
+      const antGeo = new THREE.CylinderGeometry(0.5, 0.5, 45, 6);
+      const antMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9 });
+      const ant = new THREE.Mesh(antGeo, antMat);
+      ant.position.set(l.x, l.h + 22.5, l.z);
+      this.scene.add(ant);
+
+      const beaconGeo = new THREE.SphereGeometry(2.0, 12, 12);
+      const beaconMat = new THREE.MeshStandardMaterial({ color: 0xff0033, emissive: 0xff0000, emissiveIntensity: 3.5 });
+      const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+      beacon.position.set(l.x, l.h + 46, l.z);
+      this.scene.add(beacon);
+
+      const beaconLight = new THREE.PointLight(0xff0033, 2.0, 60);
+      beaconLight.position.set(l.x, l.h + 46, l.z);
+      this.scene.add(beaconLight);
     });
   }
+
 
   createCityDetails() {
     // Textured Sidewalks
