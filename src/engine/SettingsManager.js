@@ -14,7 +14,7 @@ export class SettingsManager {
       controls: {
         preset: 'simulator', // casual, simulator, custom
         steeringMode: 'wheel', // wheel, touch, gyro
-        buttonOpacity: 0.8,
+        buttonOpacity: 0.85,
         buttonSize: 1.0,
         layoutSwap: false
       },
@@ -70,7 +70,7 @@ export class SettingsManager {
       navigation: {
         gpsEnabled: true,
         voiceGuidance: true,
-        routeType: 'shortest', // shortest, scenic, offroad
+        routeType: 'shortest',
         show3dLine: true
       },
       weather: {
@@ -80,7 +80,7 @@ export class SettingsManager {
         rainIntensity: 1.0
       },
       traffic: {
-        density: 'normal', // low, normal, high, extreme
+        density: 'normal',
         aggression: 'normal',
         pedestrians: true,
         emergencyVehicles: true
@@ -101,7 +101,7 @@ export class SettingsManager {
         intensity: 'medium'
       },
       language: {
-        textLanguage: 'en', // en, hi, hinglish, es, fr, de
+        textLanguage: 'en',
         voiceLanguage: 'en'
       },
       accessibility: {
@@ -149,6 +149,33 @@ export class SettingsManager {
     } catch (e) {
       console.warn('Failed to save settings:', e);
     }
+  }
+
+  triggerHaptic(pattern = 20) {
+    if (this.settings.haptics && this.settings.haptics.enabled && navigator.vibrate) {
+      try { navigator.vibrate(pattern); } catch (e) {}
+    }
+  }
+
+  autoOptimizeMobile() {
+    const memoryGB = navigator.deviceMemory || 4;
+    const cores = navigator.hardwareConcurrency || 4;
+    const isLowEnd = memoryGB <= 4 || cores <= 4;
+
+    if (isLowEnd) {
+      this.settings.graphics.preset = 'low';
+      this.settings.graphics.resolutionScale = 0.8;
+      this.settings.graphics.fpsTarget = 30;
+      this.settings.graphics.shadows = false;
+      this.settings.traffic.density = 'low';
+    } else {
+      this.settings.graphics.preset = 'high';
+      this.settings.graphics.resolutionScale = 1.0;
+      this.settings.graphics.fpsTarget = 60;
+      this.settings.graphics.shadows = true;
+      this.settings.traffic.density = 'normal';
+    }
+    this.saveSettings();
   }
 
   resetCategory(categoryKey) {
