@@ -484,7 +484,15 @@ class Game {
       }
     );
 
-    // 12. Render 3D Scene
+    // 12. Update Full Map Player Position (for when map is open)
+    if (this.mapUI) {
+      this.mapUI.updatePlayerPosition(
+        this.physicsEngine.position,
+        this.physicsEngine.rotation.y
+      );
+    }
+
+    // 13. Render 3D Scene
     this.sceneManager.render();
   }
 }

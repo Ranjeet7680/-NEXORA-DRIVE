@@ -219,91 +219,171 @@ export class HUD {
     if (!this.miniMapCtx || !playerPos) return;
 
     const ctx = this.miniMapCtx;
-    const w = this.miniMapCanvas.width;
-    const h = this.miniMapCanvas.height;
+    const w = this.miniMapCanvas.width;  // 130
+    const h = this.miniMapCanvas.height; // 130
     const cx = w / 2;
     const cy = h / 2;
-    const scale = 0.14;
+    const scale = 0.095; // world units to minimap pixels
 
     ctx.clearRect(0, 0, w, h);
 
-    // Circular Clip Mask
+    // ── Circular clip mask ──
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx, cy, cx - 2, 0, Math.PI * 2);
     ctx.clip();
 
-    // Dark Map Background
-    ctx.fillStyle = '#0a0f1d';
+    // Helper: world pos → minimap pixel (player-centered)
+    const rx = (wx) => cx + (wx - playerPos.x) * scale;
+    const rz = (wz) => cy + (wz - playerPos.z) * scale;
+
+    // ── 1. Biome background fill (player-relative quadrant detection) ──
+    const WORLD_R = 1200;
+
+    // Forest NW (worldX < 0, worldZ < 0)
+    ctx.fillStyle = '#1a4a10';
     ctx.fillRect(0, 0, w, h);
 
-    const renderX = (wx) => cx + (wx - playerPos.x) * scale;
-    const renderZ = (wz) => cy + (wz - playerPos.z) * scale;
+    // Get approximate biome at each corner of minimap viewport
+    const vpR = (cx - 2) / scale; // viewport radius in world units
+    const corners = [
+      { wx: playerPos.x - vpR, wz: playerPos.z - vpR },
+      { wx: playerPos.x + vpR, wz: playerPos.z - vpR },
+      { wx: playerPos.x - vpR, wz: playerPos.z + vpR },
+      { wx: playerPos.x + vpR, wz: playerPos.z + vpR },
+    ];
 
-    // Biome Region Shading
-    ctx.fillStyle = 'rgba(52, 94, 50, 0.3)';
-    ctx.fillRect(renderX(-1200), renderZ(-1200), 1200 * scale, 1200 * scale);
-    ctx.fillStyle = 'rgba(238, 246, 255, 0.3)';
-    ctx.fillRect(renderX(0), renderZ(0), 1200 * scale, 1200 * scale);
-    ctx.fillStyle = 'rgba(0, 119, 190, 0.4)';
-    ctx.fillRect(renderX(-1200), renderZ(0), 1200 * scale, 1200 * scale);
-    ctx.fillStyle = 'rgba(110, 102, 94, 0.3)';
-    ctx.fillRect(renderX(0), renderZ(-1200), 1200 * scale, 1200 * scale);
+    // Draw biome bands
+    // NW = Forest green
+    const nwX = rx(-WORLD_R);
+    const nwZ = rz(-WORLD_R);
+    const zeroX = rx(0);
+    const zeroZ = rz(0);
+    const seX = rx(WORLD_R);
+    const seZ = rz(WORLD_R);
 
-    // Draw Ring Highway (Radius 565)
-    ctx.strokeStyle = '#475569';
-    ctx.lineWidth = 10 * scale;
+    // Full background dark city
+    ctx.fillStyle = '#232830';
+    ctx.fillRect(0, 0, w, h);
+
+    // NW Forest
+    ctx.fillStyle = '#1a4a10';
+    ctx.fillRect(nwX, nwZ, zeroX - nwX, zeroZ - nwZ);
+
+    // NE Mountains
+    ctx.fillStyle = '#3d3830';
+    ctx.fillRect(zeroX, nwZ, seX - zeroX, zeroZ - nwZ);
+
+    // SW River/Beach
+    ctx.fillStyle = '#1e5a7a';
+    ctx.fillRect(nwX, zeroZ, zeroX - nwX, seZ - zeroZ);
+
+    // SE Ice
+    ctx.fillStyle = '#98c8de';
+    ctx.fillRect(zeroX, zeroZ, seX - zeroX, seZ - zeroZ);
+
+    // ── 2. Ring Highway ──
+    const ringRadiusPx = 565 * scale;
+    // Road band (dark)
+    ctx.strokeStyle = '#2d3340';
+    ctx.lineWidth = 11 * scale;
     ctx.beginPath();
-    ctx.arc(renderX(0), renderZ(0), 565 * scale, 0, Math.PI * 2);
+    ctx.arc(rx(0), rz(0), ringRadiusPx, 0, Math.PI * 2);
     ctx.stroke();
-
+    // Asphalt surface
+    ctx.strokeStyle = '#3a3f4a';
+    ctx.lineWidth = 9 * scale;
+    ctx.beginPath();
+    ctx.arc(rx(0), rz(0), ringRadiusPx, 0, Math.PI * 2);
+    ctx.stroke();
+    // Yellow center dash
     ctx.strokeStyle = '#ffcc00';
-    ctx.lineWidth = 2 * scale;
+    ctx.lineWidth = 1.5 * scale;
+    ctx.setLineDash([6 * scale, 5 * scale]);
     ctx.beginPath();
-    ctx.arc(renderX(0), renderZ(0), 565 * scale, 0, Math.PI * 2);
+    ctx.arc(rx(0), rz(0), ringRadiusPx, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.setLineDash([]);
 
-    // Draw City Grid Roads
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 6 * scale;
-    for (let rx = -300; rx <= 300; rx += 150) {
+    // ── 3. City Grid Roads ──
+    ctx.strokeStyle = '#3a4050';
+    ctx.lineWidth = 5 * scale;
+    for (let gx = -360; gx <= 360; gx += 120) {
       ctx.beginPath();
-      ctx.moveTo(renderX(rx), renderZ(-300));
-      ctx.lineTo(renderX(rx), renderZ(300));
+      ctx.moveTo(rx(gx), rz(-400));
+      ctx.lineTo(rx(gx), rz(400));
       ctx.stroke();
     }
-    for (let rz = -300; rz <= 300; rz += 150) {
+    for (let gz = -360; gz <= 360; gz += 120) {
       ctx.beginPath();
-      ctx.moveTo(renderX(-300), renderZ(rz));
-      ctx.lineTo(renderX(300), renderZ(rz));
+      ctx.moveTo(rx(-400), rz(gz));
+      ctx.lineTo(rx(400), rz(gz));
       ctx.stroke();
     }
 
-    // Draw Target Marker
+    // ── 4. Location Pins ──
+    const pins = [
+      { x: 0, z: 0, col: '#00f0ff', r: 4 },         // Garage Hub
+      { x: -450, z: -450, col: '#ff9900', r: 3 },   // Depot
+      { x:  450, z: -450, col: '#ff3355', r: 3 },   // Summit
+      { x: -450, z:  450, col: '#ffdd00', r: 3 },   // Taxi
+      { x:  450, z:  450, col: '#88ddff', r: 3 },   // Glacier
+    ];
+    pins.forEach(p => {
+      ctx.fillStyle = p.col;
+      ctx.shadowColor = p.col;
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(rx(p.x), rz(p.z), p.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    // ── 5. Target mission marker ──
     if (targetPos) {
       ctx.fillStyle = '#ff0055';
+      ctx.shadowColor = '#ff0055';
+      ctx.shadowBlur = 8;
       ctx.beginPath();
-      ctx.arc(renderX(targetPos.x), renderZ(targetPos.z), 5, 0, Math.PI * 2);
+      ctx.arc(rx(targetPos.x), rz(targetPos.z), 5, 0, Math.PI * 2);
       ctx.fill();
+      // Pulsing ring
+      ctx.strokeStyle = '#ff005588';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(rx(targetPos.x), rz(targetPos.z), 8 + Math.sin(Date.now() * 0.008) * 2, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
     }
 
     ctx.restore();
 
-    // Outer Map Ring Border
+    // ── Outer border ring ──
     ctx.strokeStyle = '#00f0ff';
     ctx.lineWidth = 2.0;
     ctx.beginPath();
     ctx.arc(cx, cy, cx - 2, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Draw Player Vehicle Directional Arrow in Center
+    // ── Inner dark thin border ──
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, cx - 3, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // ── 6. Player direction arrow (always at center) ──
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(playerRotation.y);
 
+    // Shadow/glow
+    ctx.shadowColor = '#00ffcc';
+    ctx.shadowBlur = 10;
+
     ctx.fillStyle = '#00ffcc';
     ctx.beginPath();
-    ctx.moveTo(0, -8);
+    ctx.moveTo(0, -9);
     ctx.lineTo(6, 6);
     ctx.lineTo(0, 2);
     ctx.lineTo(-6, 6);
@@ -311,5 +391,12 @@ export class HUD {
     ctx.fill();
 
     ctx.restore();
+
+    // ── 7. North indicator ──
+    ctx.fillStyle = '#ff4444';
+    ctx.font = 'bold 9px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('N', cx, 9);
   }
 }

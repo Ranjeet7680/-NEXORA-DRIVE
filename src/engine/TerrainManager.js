@@ -174,11 +174,12 @@ export class TerrainManager {
     geo.computeVertexNormals();
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    // MeshLambertMaterial: vertex colors appear vivid — no metalness/roughness washing out
-    const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+    // MeshBasicMaterial: bypass ALL lighting — vertex colors render exactly as specified
+    // This is the only reliable way to get vivid biome colors without light tinting
+    const mat = new THREE.MeshBasicMaterial({ vertexColors: true });
 
     this.terrainMesh = new THREE.Mesh(geo, mat);
-    this.terrainMesh.receiveShadow = true;
+    this.terrainMesh.receiveShadow = false; // BasicMaterial doesn't support shadows
     this.scene.add(this.terrainMesh);
   }
 
