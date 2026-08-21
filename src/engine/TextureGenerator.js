@@ -8,33 +8,47 @@ export class TextureGenerator {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#1e2026';
+    // Rich dark charcoal asphalt base
+    ctx.fillStyle = '#191c22';
     ctx.fillRect(0, 0, 512, 512);
 
+    // Coarse aggregate noise grain
     const imgData = ctx.getImageData(0, 0, 512, 512);
     const data = imgData.data;
     for (let i = 0; i < data.length; i += 4) {
-      const noise = (Math.random() - 0.5) * 35;
-      data[i] = Math.min(255, Math.max(0, data[i] + noise));
+      const noise = (Math.random() - 0.5) * 45;
+      data[i]     = Math.min(255, Math.max(0, data[i]     + noise));
       data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
-      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise + 2));
+      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise + 3));
     }
     ctx.putImageData(imgData, 0, 0);
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-    for (let i = 0; i < 400; i++) {
+    // Subtle light aggregate specks
+    ctx.fillStyle = 'rgba(200, 200, 210, 0.12)';
+    for (let i = 0; i < 600; i++) {
       const x = Math.random() * 512;
       const y = Math.random() * 512;
-      const r = Math.random() * 1.5;
+      const r = 0.5 + Math.random() * 2;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
     }
 
+    // Subtle tire track lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 8; i++) {
+      const x = Math.random() * 512;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + (Math.random() - 0.5) * 20, 512);
+      ctx.stroke();
+    }
+
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(16, 16);
+    texture.repeat.set(12, 12);
     return texture;
   }
 

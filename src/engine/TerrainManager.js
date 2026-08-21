@@ -110,39 +110,59 @@ export class TerrainManager {
     const pos = geo.attributes.position;
     const colors = new Float32Array(pos.count * 3);
 
-    const colorCity    = new THREE.Color(0x383e47);  // Dark asphalt city
-    const colorForest  = new THREE.Color(0x245a24);  // Rich forest green
-    const colorMountain= new THREE.Color(0x6a6054);  // Rocky mountain grey
-    const colorRiver   = new THREE.Color(0xd4b585);  // Sandy beach
-    const colorIce     = new THREE.Color(0xe8f4ff);  // Snow white-blue
-    const colorGrass   = new THREE.Color(0x3e6c35);  // Grass green
+    // Rich vivid biome colors — strongly saturated to look vibrant under sunlight
+    const colorCity        = new THREE.Color(0x303540);  // City dark asphalt grey
+    const colorGrass       = new THREE.Color(0x2e7a1a);  // Vivid grass green hub
+    const colorForest      = new THREE.Color(0x1a5e10);  // Deep pine forest green
+    const colorForestGrass = new THREE.Color(0x337020);  // Forest undergrowth lighter
+    const colorMountainLow = new THREE.Color(0x5a5248);  // Rocky mountain low
+    const colorMountainMid = new THREE.Color(0x7a7068);  // Rocky mountain mid
+    const colorSnow        = new THREE.Color(0xfafcff);  // Pure snow peaks
+    const colorSand        = new THREE.Color(0xe8c87a);  // Warm sandy beach
+    const colorWater       = new THREE.Color(0x1e88b8);  // Water color
+    const colorIceLow      = new THREE.Color(0xb0d8ee);  // Ice valley floor
+    const colorIceMid      = new THREE.Color(0xd5ecf8);  // Ice snow
+    const colorIceHigh     = new THREE.Color(0xffffff);  // Pure glacier
 
     for (let i = 0; i < pos.count; i++) {
       const vx = pos.getX(i);
       const vy = pos.getY(i);
-
       const worldX = vx;
       const worldZ = -vy;
-
       const height = this.getHeightAt(worldX, worldZ);
       pos.setZ(i, height);
       this.heightData[i] = height;
 
       const biome = this.getBiomeAt(worldX, worldZ);
-      let c = colorCity;
-      if (biome === BIOMES.FOREST) {
-        if (height > 15) c = colorMountain.clone().lerp(colorForest, 0.5);
-        else c = colorGrass.clone().lerp(colorForest, 0.7);
+      const distFromOrigin = Math.sqrt(worldX * worldX + worldZ * worldZ);
+      let c;
+
+      if (biome === BIOMES.CITY) {
+        // Road area is dark, outer city transitions to grass
+        if (distFromOrigin < 140) {
+          c = colorCity.clone();
+        } else {
+          const t = Math.min(1, (distFromOrigin - 140) / 250);
+          c = colorCity.clone().lerp(colorGrass, t);
+        }
+      } else if (biome === BIOMES.FOREST) {
+        if (height > 18) c = colorMountainLow.clone().lerp(colorForest, 0.35);
+        else if (height > 8) c = colorForest.clone();
+        else c = colorForestGrass.clone();
       } else if (biome === BIOMES.MOUNTAINS) {
-        if (height > 60) c = new THREE.Color(0xfafafa);
-        else if (height > 30) c = new THREE.Color(0x9a8c7e);
-        else c = colorMountain;
+        if (height > 65) c = colorSnow.clone();
+        else if (height > 40) c = colorSnow.clone().lerp(colorMountainMid, (65 - height) / 25);
+        else if (height > 20) c = colorMountainMid.clone();
+        else c = colorMountainLow.clone();
       } else if (biome === BIOMES.RIVER) {
-        c = colorRiver;
+        if (height < -4) c = colorWater.clone();
+        else c = colorSand.clone();
       } else if (biome === BIOMES.ICE) {
-        if (height > 40) c = new THREE.Color(0xffffff);
-        else if (height > 20) c = new THREE.Color(0xd0eeff);
-        else c = colorIce;
+        if (height > 45) c = colorIceHigh.clone();
+        else if (height > 22) c = colorIceMid.clone();
+        else c = colorIceLow.clone();
+      } else {
+        c = colorGrass.clone();
       }
 
       colors[i * 3]     = c.r;
@@ -154,11 +174,8 @@ export class TerrainManager {
     geo.computeVertexNormals();
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    const mat = new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.8,
-      metalness: 0.1,
-    });
+    // MeshLambertMaterial: vertex colors appear vivid — no metalness/roughness washing out
+    const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
 
     this.terrainMesh = new THREE.Mesh(geo, mat);
     this.terrainMesh.receiveShadow = true;
@@ -166,21 +183,20 @@ export class TerrainManager {
   }
 
   createRoadNetwork() {
-    // High-Detail Asphalt with Map Texture
-    const asphaltMat = new THREE.MeshStandardMaterial({
+    // Asphalt road material — Lambert so texture shows correctly without metalness darkening
+    const asphaltMat = new THREE.MeshLambertMaterial({
       map: this.asphaltTexture,
-      roughness: 0.55,
-      metalness: 0.15
+      color: 0x222228,  // Dark charcoal tint
     });
     const yellowLineMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
-    const whiteLineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const guardrailMat = new THREE.MeshStandardMaterial({ color: 0x7799bb, roughness: 0.25, metalness: 0.9 });
+    const whiteLineMat  = new THREE.MeshBasicMaterial({ color: 0xf0f0f0 });
+    const guardrailMat  = new THREE.MeshStandardMaterial({ color: 0x8899aa, roughness: 0.25, metalness: 0.85 });
 
     // 1. Main Outer Ring Highway (Radius 565, Width 36)
     const ringGeo = new THREE.RingGeometry(546, 584, 160);
     ringGeo.rotateX(-Math.PI / 2);
     const ringMesh = new THREE.Mesh(ringGeo, asphaltMat);
-    ringMesh.position.y = 0.22;
+    ringMesh.position.y = 0.35; // Raised higher so road sits cleanly above terrain
     ringMesh.receiveShadow = true;
     this.scene.add(ringMesh);
 
@@ -264,28 +280,28 @@ export class TerrainManager {
       const roadGeo = new THREE.PlaneGeometry(cityRoadWidth, 800);
       roadGeo.rotateX(-Math.PI / 2);
       const road = new THREE.Mesh(roadGeo, asphaltMat);
-      road.position.set(x, 0.23, 0);
+      road.position.set(x, 0.38, 0);
       road.receiveShadow = true;
       this.scene.add(road);
 
       const ylGeo = new THREE.PlaneGeometry(1.2, 800);
       ylGeo.rotateX(-Math.PI / 2);
       const yl = new THREE.Mesh(ylGeo, yellowLineMat);
-      yl.position.set(x, 0.26, 0);
+      yl.position.set(x, 0.42, 0);
       this.scene.add(yl);
     }
     for (let z = -400; z <= 400; z += 120) {
       const roadGeo = new THREE.PlaneGeometry(800, cityRoadWidth);
       roadGeo.rotateX(-Math.PI / 2);
       const road = new THREE.Mesh(roadGeo, asphaltMat);
-      road.position.set(0, 0.23, z);
+      road.position.set(0, 0.38, z);
       road.receiveShadow = true;
       this.scene.add(road);
 
       const ylGeo = new THREE.PlaneGeometry(800, 1.2);
       ylGeo.rotateX(-Math.PI / 2);
       const yl = new THREE.Mesh(ylGeo, yellowLineMat);
-      yl.position.set(0, 0.26, z);
+      yl.position.set(0, 0.42, z);
       this.scene.add(yl);
     }
 

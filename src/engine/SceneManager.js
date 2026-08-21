@@ -4,9 +4,9 @@ export class SceneManager {
   constructor(canvasContainer) {
     this.container = canvasContainer;
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x70b8f0);
+    this.scene.background = new THREE.Color(0x4488cc); // Vivid blue sky background
 
-    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 3000);
+    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 3500);
     this.camera.position.set(0, 5, 10);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
@@ -15,42 +15,41 @@ export class SceneManager {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.0;
+    this.renderer.toneMappingExposure = 0.9; // Slightly reduced to avoid overexposure
 
     this.container.appendChild(this.renderer.domElement);
 
-    // Natural Balanced Hemispheric Lighting (Sky / Ground bounce)
-    this.hemiLight = new THREE.HemisphereLight(0xdff0ff, 0x3d4b3a, 0.65);
+    // Hemispheric sky/ground bounce — warm sky top, deep green ground bounce
+    this.hemiLight = new THREE.HemisphereLight(0xaaccff, 0x335522, 0.8);
     this.scene.add(this.hemiLight);
 
-    // Soft Ambient Fill Light
-    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
+    // Soft ambient fill (lower so shadows remain visible and contrast is good)
+    this.ambientLight = new THREE.AmbientLight(0xfff8f0, 0.3);
     this.scene.add(this.ambientLight);
 
-    // Sunlight Directional Light
-    this.sunLight = new THREE.DirectionalLight(0xfffaed, 1.25);
-    this.sunLight.position.set(250, 400, 200);
+    // Primary sunlight — stronger, angled for good shadow definition
+    this.sunLight = new THREE.DirectionalLight(0xfff8e8, 1.5);
+    this.sunLight.position.set(300, 500, 180);
     this.sunLight.castShadow = true;
     this.sunLight.shadow.mapSize.width = 2048;
     this.sunLight.shadow.mapSize.height = 2048;
     this.sunLight.shadow.camera.near = 0.5;
-    this.sunLight.shadow.camera.far = 1600;
-
-    const d = 400;
+    this.sunLight.shadow.camera.far = 1800;
+    const d = 600;
     this.sunLight.shadow.camera.left = -d;
     this.sunLight.shadow.camera.right = d;
     this.sunLight.shadow.camera.top = d;
     this.sunLight.shadow.camera.bottom = -d;
-    this.sunLight.shadow.bias = -0.0005;
+    this.sunLight.shadow.bias = -0.0004;
     this.scene.add(this.sunLight);
 
-    // Secondary fill light
-    this.fillLight = new THREE.DirectionalLight(0x88bbdd, 0.25);
-    this.fillLight.position.set(-200, 150, -300);
+    // Cool sky-fill from opposite side (blue bounce from sky)
+    this.fillLight = new THREE.DirectionalLight(0x6699cc, 0.4);
+    this.fillLight.position.set(-250, 200, -200);
     this.scene.add(this.fillLight);
 
-    // Clear Linear Fog (Zero fog within 200m so world is crystal clear!)
-    this.scene.fog = new THREE.Fog(0x87ceeb, 200, 2200);
+    // Linear fog — starts at 600m so entire road, city, and world near player is crystal clear
+    this.scene.fog = new THREE.Fog(0x8bb8e8, 600, 2800);
 
     // Cloud system
     this.clouds = [];
@@ -69,6 +68,7 @@ export class SceneManager {
     // Window Resize Handler
     window.addEventListener('resize', () => this.onWindowResize());
   }
+
 
   _createSunDisc() {
     const sunGroup = new THREE.Group();
@@ -127,20 +127,23 @@ export class SceneManager {
   }
 
   _createGradientSky() {
-    const skyGeo = new THREE.SphereGeometry(2500, 32, 16);
+    const skyGeo = new THREE.SphereGeometry(2800, 32, 16);
     const skyColors = new Float32Array(skyGeo.attributes.position.count * 3);
     const pos = skyGeo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
       const y = pos.getY(i);
-      const norm = (y + 2500) / 5000;
-      const top = new THREE.Color(0x1976d2);    // Rich vibrant sky blue
-      const mid = new THREE.Color(0x64b5f6);    // Clear daylight blue
-      const horizon = new THREE.Color(0xbbdefb); // Soft bright horizon
+      const norm = (y + 2800) / 5600;  // 0 at bottom, 1 at top
+      // Deep royal blue at zenith → clear cerulean mid-sky → bright horizon
+      const zenith   = new THREE.Color(0x0d3a7a);  // Deep royal blue
+      const midSky   = new THREE.Color(0x1a6fc4);  // Clear blue sky
+      const horizon  = new THREE.Color(0x88c8f0);  // Bright horizon blue-white
       let c;
-      if (norm > 0.5) {
-        c = top.clone().lerp(mid, (1.0 - norm) / 0.5);
+      if (norm > 0.62) {
+        c = zenith.clone().lerp(midSky, (1.0 - norm) / 0.38);
+      } else if (norm > 0.45) {
+        c = midSky.clone().lerp(horizon, (0.62 - norm) / 0.17);
       } else {
-        c = mid.clone().lerp(horizon, (0.5 - norm) / 0.5);
+        c = horizon.clone();
       }
       skyColors[i * 3] = c.r;
       skyColors[i * 3 + 1] = c.g;
@@ -204,47 +207,47 @@ export class SceneManager {
 
     if (timeOfDay < 5) {
       // Night 0-5
-      skyColor = new THREE.Color(0x040c1c);
-      fogColor = new THREE.Color(0x060f22);
-      sunColor = new THREE.Color(0x2244aa);
-      this.hemiLight.intensity = 0.2;
-      this.ambientLight.intensity = 0.15;
-      this.sunLight.intensity = 0.3;
+      skyColor = new THREE.Color(0x030a18);
+      fogColor = new THREE.Color(0x050c1e);
+      sunColor = new THREE.Color(0x1a3488);
+      this.hemiLight.intensity = 0.18;
+      this.ambientLight.intensity = 0.12;
+      this.sunLight.intensity = 0.25;
     } else if (timeOfDay < 7) {
       // Dawn 5-7
       const t = (timeOfDay - 5) / 2;
-      skyColor = new THREE.Color(0x040c1c).lerp(new THREE.Color(0xff7733), t);
-      fogColor = new THREE.Color(0x060f22).lerp(new THREE.Color(0xffaa55), t);
-      sunColor = new THREE.Color(0xff6600);
+      skyColor = new THREE.Color(0x030a18).lerp(new THREE.Color(0xff6622), t);
+      fogColor = new THREE.Color(0x050c1e).lerp(new THREE.Color(0xff9944), t);
+      sunColor = new THREE.Color(0xff5500);
       this.hemiLight.intensity = 0.4;
-      this.ambientLight.intensity = 0.25;
-      this.sunLight.intensity = 0.8;
+      this.ambientLight.intensity = 0.22;
+      this.sunLight.intensity = 0.85;
     } else if (timeOfDay < 17) {
-      // Day 7-17 (Crystal Clear Blue Sky, Sharp Contrast)
-      skyColor = new THREE.Color(0x64b5f6);
-      fogColor = new THREE.Color(0x90caf9);
-      sunColor = new THREE.Color(0xfffaed);
-      this.hemiLight.intensity = 0.65;
-      this.ambientLight.intensity = 0.35;
-      this.sunLight.intensity = 1.25;
+      // Day 7-17 (Vivid blue sky, strong directional sun, sharp shadows)
+      skyColor = new THREE.Color(0x4488cc);
+      fogColor = new THREE.Color(0x8bb8e8);
+      sunColor = new THREE.Color(0xfff8e8);
+      this.hemiLight.intensity = 0.8;
+      this.ambientLight.intensity = 0.3;
+      this.sunLight.intensity = 1.5;
     } else if (timeOfDay < 19) {
       // Sunset 17-19
       const t = (timeOfDay - 17) / 2;
-      skyColor = new THREE.Color(0x64b5f6).lerp(new THREE.Color(0xff4400), t);
-      fogColor = new THREE.Color(0x90caf9).lerp(new THREE.Color(0xff7733), t);
+      skyColor = new THREE.Color(0x4488cc).lerp(new THREE.Color(0xff3300), t);
+      fogColor = new THREE.Color(0x8bb8e8).lerp(new THREE.Color(0xff6633), t);
       sunColor = new THREE.Color(0xff6600);
       this.hemiLight.intensity = 0.45;
-      this.ambientLight.intensity = 0.25;
-      this.sunLight.intensity = 0.9;
+      this.ambientLight.intensity = 0.22;
+      this.sunLight.intensity = 0.85;
     } else {
       // Night 19-24
       const t = Math.min(1, (timeOfDay - 19) / 3);
-      skyColor = new THREE.Color(0xff4400).lerp(new THREE.Color(0x040c1c), t);
-      fogColor = new THREE.Color(0xff7733).lerp(new THREE.Color(0x060f22), t);
-      sunColor = new THREE.Color(0x2244aa);
-      this.hemiLight.intensity = 0.2;
-      this.ambientLight.intensity = 0.15;
-      this.sunLight.intensity = 0.3;
+      skyColor = new THREE.Color(0xff3300).lerp(new THREE.Color(0x030a18), t);
+      fogColor = new THREE.Color(0xff6633).lerp(new THREE.Color(0x050c1e), t);
+      sunColor = new THREE.Color(0x1a3488);
+      this.hemiLight.intensity = 0.18;
+      this.ambientLight.intensity = 0.12;
+      this.sunLight.intensity = 0.25;
     }
 
     this.scene.background.lerp(skyColor, 0.02);
