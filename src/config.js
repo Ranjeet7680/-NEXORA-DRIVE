@@ -48,6 +48,32 @@ export const VEHICLE_CONFIGS = {
     engineSoundPitch: 1.0,
     loadingImage: '/assets/loading/loading_car.png'
   },
+  mustang: {
+    id: 'mustang',
+    name: 'Ford Mustang GT3 / Boss 302',
+    type: 'V8 Muscle GT3',
+    icon: '🐎',
+    price: 0,
+    mass: 1380,
+    topSpeed: 275,
+    acceleration: 58,
+    braking: 85,
+    steeringSpeed: 5.2,
+    suspensionStiffness: 28,
+    suspensionDamping: 4.5,
+    cameraOffsets: {
+      fpv: { x: -0.34, y: 0.95, z: -0.08 },
+      dash: { x: 0.0, y: 1.02, z: 0.38 },
+      wheel: { x: -0.34, y: 0.92, z: 0.20 },
+      hood: { x: 0.0, y: 0.82, z: 1.85 },
+      chase: { distance: 5.6, height: 2.1 },
+      cinematic: { distance: 10.5, height: 3.6 }
+    },
+    dimensions: { length: 4.6, width: 2.02, height: 1.30 },
+    wheelRadius: 0.36,
+    engineSoundPitch: 0.85,
+    loadingImage: '/assets/loading/loading_car.png'
+  },
   bus: {
     id: 'bus',
     name: 'Metro City Express Bus',

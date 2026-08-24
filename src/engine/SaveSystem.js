@@ -7,15 +7,16 @@ export class SaveSystem {
     return {
       credits: 5000,
       selectedVehicle: 'car',
-      unlockedVehicles: ['car'],
+      unlockedVehicles: ['car', 'mustang'],
       upgrades: {
-        car: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x0066ff },
-        bus: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0xcc2222 },
-        bike: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x00cc44 },
-        truck: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x333333 },
-        taxi: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0xffcc00 },
-        suv: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x995522 },
-        police: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x111122 }
+        car: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x9ba5b0 },
+        mustang: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x0066cc },
+        bus: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x0284c7 },
+        bike: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0xd90429 },
+        truck: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x334155 },
+        taxi: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0xffbe0b },
+        suv: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x2e3846 },
+        police: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x0f172a }
       },
       settings: {
         gyroEnabled: false,

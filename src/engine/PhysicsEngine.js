@@ -80,80 +80,92 @@ export class PhysicsEngine {
     // 1. Detect current Biome & Surface Friction
     this.currentBiome = this.terrainManager.getBiomeAt(this.position.x, this.position.z);
     this.surfaceFriction = this.currentBiome.friction;
-    this.surfaceFriction += (this.upgradeLevels.tires || 0) * 0.08;
+    this.surfaceFriction += (this.upgradeLevels.tires || 0) * 0.10;
 
-    const damageFactor = Math.max(0.6, this.damageHealth / 100);
+    const damageFactor = Math.max(0.65, this.damageHealth / 100);
 
-    // 2. Engine Torque & Acceleration / Braking
-    const engineBonus = 1.0 + (this.upgradeLevels.engine || 0) * 0.15;
-    const accelTorque = this.vehicleConfig.acceleration * engineBonus * 0.9 * damageFactor;
+    // 2. Engine Torque & High-Performance V8 / GT Power Curve
+    const engineBonus = 1.0 + (this.upgradeLevels.engine || 0) * 0.18;
+    const accelTorque = this.vehicleConfig.acceleration * engineBonus * 1.05 * damageFactor;
 
     let forwardForce = 0;
     if (this.inputThrottle > 0) {
-      forwardForce = this.inputThrottle * accelTorque;
+      // Dynamic V8 torque: extra punch at low/mid RPMs with smooth top-end pull
+      const rpmFactor = 0.85 + 0.35 * Math.sin(Math.min(1.0, this.rpm / 6500) * Math.PI);
+      forwardForce = this.inputThrottle * accelTorque * rpmFactor;
     } else if (this.inputThrottle < 0) {
-      const brakeBonus = 1.0 + (this.upgradeLevels.brakes || 0) * 0.2;
-      forwardForce = this.inputThrottle * this.vehicleConfig.braking * brakeBonus * 0.85;
+      const brakeBonus = 1.0 + (this.upgradeLevels.brakes || 0) * 0.22;
+      forwardForce = this.inputThrottle * this.vehicleConfig.braking * brakeBonus * 0.95;
     }
 
-    // 3. Handbrake & Drifting
+    // 3. Realistic Tire Slip, Handbrake & Progressive Drift Dynamics
+    const forwardDir = new THREE.Vector3(0, 0, 1).applyEuler(this.rotation);
+    const sideDir = new THREE.Vector3(1, 0, 0).applyEuler(this.rotation);
+    const forwardSpeed = this.velocity.dot(forwardDir);
+    const sideSpeed = this.velocity.dot(sideDir);
+
     if (this.inputHandbrake) {
-      forwardForce *= 0.15;
-      this.isDrifting = this.speedKmh > 20;
+      forwardForce *= 0.10;
+      this.isDrifting = this.speedKmh > 18;
     } else {
-      this.isDrifting = (this.surfaceFriction < 0.5 && this.speedKmh > 35 && Math.abs(this.inputSteer) > 0.4);
+      // Natural drift when lateral force exceeds tire adhesion threshold
+      const lateralG = Math.abs(sideSpeed) / Math.max(1.0, Math.abs(forwardSpeed));
+      this.isDrifting = (this.speedKmh > 32 && lateralG > 0.22 && Math.abs(this.inputSteer) > 0.35);
     }
 
-    // 4. Steering Dynamics (Speed sensitive damping)
-    const maxSteer = Math.PI / 5; // ~36° max wheel turn
-    const speedDamping = Math.max(0.35, 1.0 - (this.speedKmh / (this.vehicleConfig.topSpeed * 1.2)));
+    // 4. Progressive Steering Dynamics (Speed-sensitive steering ratio)
+    const maxSteer = Math.PI / 4.8; // ~37.5° max wheel lock
+    const speedRatio = Math.min(1.0, this.speedKmh / this.vehicleConfig.topSpeed);
+    const speedDamping = Math.max(0.40, 1.0 - (speedRatio * 0.55));
     const targetSteer = this.inputSteer * maxSteer * speedDamping;
     
-    this.steeringAngle += (targetSteer - this.steeringAngle) * Math.min(1.0, deltaTime * this.vehicleConfig.steeringSpeed * 3.5);
+    const steerResponsiveness = this.vehicleConfig.steeringSpeed * 4.2;
+    this.steeringAngle += (targetSteer - this.steeringAngle) * Math.min(1.0, deltaTime * steerResponsiveness);
 
-    // 5. Angular Velocity & Correct Yaw Turn Direction
-    const turnRadius = this.vehicleConfig.dimensions.length / Math.tan(Math.max(0.01, Math.abs(this.steeringAngle)));
-    const forwardSpeed = this.velocity.length();
+    // 5. Angular Velocity & Natural Drift Counter-steering
+    const turnRadius = this.vehicleConfig.dimensions.length / Math.tan(Math.max(0.012, Math.abs(this.steeringAngle)));
+    const absForwardSpeed = Math.abs(forwardSpeed);
 
-    const driftSlipMultiplier = this.isDrifting ? (1.6 / Math.max(0.2, this.surfaceFriction)) : 1.0;
-    const targetYawRate = -Math.sign(this.steeringAngle) * (forwardSpeed / turnRadius) * driftSlipMultiplier;
+    // Aerodynamic Downforce: Increases with speed squared (v^2)
+    const aeroDownforceGrip = 1.0 + Math.pow(speedRatio, 1.8) * 0.45;
+
+    const driftMultiplier = this.isDrifting ? (1.75 / Math.max(0.25, this.surfaceFriction)) : 1.0;
+    const targetYawRate = -Math.sign(this.steeringAngle) * (absForwardSpeed / turnRadius) * driftMultiplier;
     
-    this.angularVelocity += (targetYawRate - this.angularVelocity) * Math.min(1.0, deltaTime * 8.0);
+    this.angularVelocity += (targetYawRate - this.angularVelocity) * Math.min(1.0, deltaTime * 9.5);
     this.rotation.y += this.angularVelocity * deltaTime;
 
-    // Body Roll on cornering
-    const targetRoll = -this.steeringAngle * (this.speedKmh / 140) * 0.25;
-    this.bodyRoll += (targetRoll - this.bodyRoll) * Math.min(1.0, deltaTime * 6.0);
+    // 6. Dynamic Suspension Weight Transfer (Body Pitch & Roll)
+    // Lateral body roll under centrifugal cornering force
+    const targetRoll = -this.steeringAngle * Math.min(1.2, this.speedKmh / 110) * 0.22;
+    this.bodyRoll += (targetRoll - this.bodyRoll) * Math.min(1.0, deltaTime * 7.5);
     this.rotation.z = this.bodyRoll;
 
-    // Body Pitch on braking/accel
-    const targetPitch = -this.inputThrottle * 0.06;
-    this.bodyPitch += (targetPitch - this.bodyPitch) * Math.min(1.0, deltaTime * 6.0);
+    // Longitudinal body pitch: nose dive on braking, rear squat on hard acceleration
+    const targetPitch = (this.inputThrottle < 0 ? 0.08 * Math.abs(this.inputThrottle) : -0.05 * this.inputThrottle);
+    this.bodyPitch += (targetPitch - this.bodyPitch) * Math.min(1.0, deltaTime * 7.5);
     this.rotation.x = this.bodyPitch;
 
-    // 6. Linear Acceleration & Vector Movement
-    const forwardDir = new THREE.Vector3(0, 0, 1).applyEuler(this.rotation);
+    // 7. Linear Acceleration & Vector Movement with Friction Ellipse
     const accelVec = forwardDir.clone().multiplyScalar((forwardForce / (this.vehicleConfig.mass * 0.001)) * deltaTime);
 
-    const gripFactor = this.isDrifting ? 0.25 * this.surfaceFriction : 0.92 * this.surfaceFriction;
+    // Grip Factor: High static grip, progressive dynamic drift slide
+    const baseGrip = this.isDrifting ? 0.28 : 0.94;
+    const totalGrip = baseGrip * this.surfaceFriction * aeroDownforceGrip;
     
-    const currentForwardSpeed = this.velocity.dot(forwardDir);
-    const sideDir = new THREE.Vector3(1, 0, 0).applyEuler(this.rotation);
-    const currentSideSpeed = this.velocity.dot(sideDir);
-
-    const newForwardSpeed = (currentForwardSpeed + accelVec.dot(forwardDir)) * 0.994;
-    const newSideSpeed = currentSideSpeed * (1.0 - gripFactor * Math.min(1.0, deltaTime * 10.0));
+    const newForwardSpeed = (forwardSpeed + accelVec.dot(forwardDir)) * 0.995;
+    const newSideSpeed = sideSpeed * (1.0 - Math.min(0.98, totalGrip * deltaTime * 12.0));
 
     this.velocity.copy(forwardDir.clone().multiplyScalar(newForwardSpeed))
       .add(sideDir.clone().multiplyScalar(newSideSpeed));
 
-    // Top Speed Clamp
+    // Top Speed Dynamic Cap with Upgrades
     const topSpeedMs = (this.vehicleConfig.topSpeed * (1 + (this.upgradeLevels.engine || 0) * 0.08)) / 3.6;
     if (this.velocity.length() > topSpeedMs) {
       this.velocity.setLength(topSpeedMs);
     }
 
-    // 7. Position Integration
+    // 8. Position Integration & Ground Adhesion
     this.position.addScaledVector(this.velocity, deltaTime);
 
     // ── 8. PHYSICAL OBSTACLE COLLISION DETECTION & RESPONSE ──

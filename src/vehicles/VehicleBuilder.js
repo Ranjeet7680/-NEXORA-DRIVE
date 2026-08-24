@@ -70,6 +70,9 @@ export class VehicleBuilder {
       case 'police':
         VehicleBuilder.buildSedanBody(chassis, config, bodyMaterial, bodyAccentMaterial, glassMaterial, darkMaterial, carbonMaterial, chromeMaterial, lightMaterial, brakeLightMaterial, indicatorMaterial, interiorLeatherMat, customUpgrades);
         break;
+      case 'mustang':
+        VehicleBuilder.buildMustangBody(chassis, config, bodyMaterial, bodyAccentMaterial, glassMaterial, darkMaterial, carbonMaterial, chromeMaterial, lightMaterial, brakeLightMaterial, indicatorMaterial, interiorLeatherMat, customUpgrades);
+        break;
       case 'bus':
         VehicleBuilder.buildBusBody(chassis, config, bodyMaterial, bodyAccentMaterial, glassMaterial, darkMaterial, chromeMaterial, lightMaterial, brakeLightMaterial, indicatorMaterial, interiorLeatherMat);
         break;
@@ -586,7 +589,195 @@ export class VehicleBuilder {
   }
 
   // ═════════════════════════════════════════════════════════════════════════
-  // 2. HEAVY-DUTY SEMI TRUCK + ARTICULATED CARGO FREIGHT TRAILER
+  // 2. FORD MUSTANG GT3 / 1969 BOSS 302 V8 MUSCLE RACE CAR
+  // ═════════════════════════════════════════════════════════════════════════
+  static buildMustangBody(chassis, config, bodyMat, accentMat, glassMat, darkMat, carbonMat, chromeMat, lightMat, brakeMat, indicatorMat, leatherMat, customUpgrades) {
+    const { length, width, height } = config.dimensions;
+
+    // ── 1. Widebody Muscle Tub & Flared GT3 Fenders ──
+    const lowerGeo = new THREE.BoxGeometry(width * 0.98, height * 0.36, length * 0.98);
+    const lowerMesh = new THREE.Mesh(lowerGeo, bodyMat);
+    lowerMesh.position.y = height * 0.28;
+    lowerMesh.castShadow = true;
+    chassis.add(lowerMesh);
+
+    // Flared GT3 Widebody Wheel Arches (Front & Rear)
+    [-width * 0.495, width * 0.495].forEach(fx => {
+      const archF = new THREE.Mesh(new THREE.BoxGeometry(0.08, height * 0.26, length * 0.28), bodyMat);
+      const archR = new THREE.Mesh(new THREE.BoxGeometry(0.08, height * 0.26, length * 0.30), bodyMat);
+      archF.position.set(fx, height * 0.30, length * 0.28);
+      archR.position.set(fx, height * 0.30, -length * 0.26);
+      chassis.add(archF);
+      chassis.add(archR);
+    });
+
+    // Front Carbon GT3 Aerodynamic Splitter & Dive Planes (Canards)
+    const splitter = new THREE.Mesh(new THREE.BoxGeometry(width * 1.04, 0.04, length * 0.18), carbonMat);
+    splitter.position.set(0, height * 0.10, length * 0.49);
+    splitter.castShadow = true;
+    chassis.add(splitter);
+
+    // Dual Aero Canards / Dive Planes
+    [-width * 0.48, width * 0.48].forEach(cx => {
+      const canard = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.02, 0.16), carbonMat);
+      canard.position.set(cx, height * 0.26, length * 0.48);
+      canard.rotation.z = cx > 0 ? 0.3 : -0.3;
+      chassis.add(canard);
+    });
+
+    // ── 2. Iconic Mustang Wide Hexagonal Grille & Galloping Pony Badge ──
+    const grille = new THREE.Mesh(new THREE.BoxGeometry(width * 0.72, height * 0.28, 0.08), darkMat);
+    grille.position.set(0, height * 0.34, length * 0.505);
+    chassis.add(grille);
+
+    // Chrome Galloping Pony Emblem in center of Grille
+    const ponyBadge = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.04), chromeMat);
+    ponyBadge.position.set(0, height * 0.34, length * 0.54);
+    chassis.add(ponyBadge);
+
+    // ── 3. Power Bulge Hood with Dual Black Heat Extractor Louvers ──
+    const hoodGeo = new THREE.BoxGeometry(width * 0.92, height * 0.14, length * 0.42);
+    const hoodMesh = new THREE.Mesh(hoodGeo, bodyMat);
+    hoodMesh.position.set(0, height * 0.47, length * 0.26);
+    hoodMesh.castShadow = true;
+    chassis.add(hoodMesh);
+
+    // Dual Black Racing Stripes along Hood
+    [-width * 0.10, width * 0.10].forEach(sx => {
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(width * 0.08, 0.015, length * 0.42), accentMat);
+      stripe.position.set(sx, height * 0.545, length * 0.26);
+      chassis.add(stripe);
+    });
+
+    // Dual Hood Air Extraction Louvers
+    [-width * 0.24, width * 0.24].forEach(vx => {
+      const vent = new THREE.Mesh(new THREE.BoxGeometry(width * 0.14, 0.025, length * 0.14), carbonMat);
+      vent.position.set(vx, height * 0.545, length * 0.22);
+      chassis.add(vent);
+    });
+
+    // ── 4. Iconic Tri-Bar LED Headlights (|||   |||) ──
+    [-width * 0.36, width * 0.36].forEach(hx => {
+      // Main Headlight Housing
+      const housing = new THREE.Mesh(new THREE.BoxGeometry(width * 0.18, height * 0.12, 0.08), darkMat);
+      housing.position.set(hx, height * 0.39, length * 0.485);
+      chassis.add(housing);
+
+      // 3 Vertical Tri-Bar LED Daytime Running Light Slats
+      for (let b = -1; b <= 1; b++) {
+        const triBar = new THREE.Mesh(new THREE.BoxGeometry(0.022, height * 0.08, 0.04), lightMat);
+        triBar.position.set(hx + b * 0.045, height * 0.39, length * 0.525);
+        chassis.add(triBar);
+      }
+    });
+
+    // Amber Corner Turn Indicators
+    const indGeo = new THREE.BoxGeometry(width * 0.06, height * 0.06, 0.06);
+    const indFL = new THREE.Mesh(indGeo, indicatorMat);
+    const indFR = new THREE.Mesh(indGeo, indicatorMat);
+    indFL.position.set(-width * 0.47, height * 0.39, length * 0.46);
+    indFR.position.set(width * 0.47, height * 0.39, length * 0.46);
+    chassis.add(indFL);
+    chassis.add(indFR);
+
+    // ── 5. Fastback Coupe Roof, Windshield & Boss 302 Louvers ──
+    const roofGeo = new THREE.BoxGeometry(width * 0.82, 0.04, length * 0.42);
+    const roofMesh = new THREE.Mesh(roofGeo, carbonMat);
+    roofMesh.position.set(0, height * 0.94, -length * 0.06);
+    roofMesh.castShadow = true;
+    chassis.add(roofMesh);
+
+    // Dual Racing Stripes along Roof
+    [-width * 0.10, width * 0.10].forEach(sx => {
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(width * 0.08, 0.015, length * 0.42), accentMat);
+      stripe.position.set(sx, height * 0.965, -length * 0.06);
+      chassis.add(stripe);
+    });
+
+    // Front Windshield
+    const windshield = new THREE.Mesh(new THREE.BoxGeometry(width * 0.80, height * 0.44, 0.02), glassMat);
+    windshield.position.set(0, height * 0.70, length * 0.12);
+    windshield.rotation.x = -0.42;
+    chassis.add(windshield);
+
+    // Fastback Rear Window
+    const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(width * 0.78, height * 0.45, 0.02), glassMat);
+    rearGlass.position.set(0, height * 0.68, -length * 0.24);
+    rearGlass.rotation.x = 0.48;
+    chassis.add(rearGlass);
+
+    // Side Windows
+    [-width * 0.42, width * 0.42].forEach(wx => {
+      const sideGlass = new THREE.Mesh(new THREE.BoxGeometry(0.02, height * 0.34, length * 0.34), glassMat);
+      sideGlass.position.set(wx, height * 0.70, -length * 0.06);
+      chassis.add(sideGlass);
+
+      // Carbon Racing Mirrors
+      const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, 0.14), carbonMat);
+      mirror.position.set(wx > 0 ? wx + 0.08 : wx - 0.08, height * 0.60, length * 0.14);
+      chassis.add(mirror);
+    });
+
+    // ── 6. Tri-Bar Vertical LED Taillights (|||   |||) ──
+    const brakeLightsArr = [];
+    [-width * 0.32, width * 0.32].forEach(tx => {
+      const tailHousing = new THREE.Mesh(new THREE.BoxGeometry(width * 0.22, height * 0.18, 0.06), darkMat);
+      tailHousing.position.set(tx, height * 0.48, -length * 0.495);
+      chassis.add(tailHousing);
+
+      // 3 Vertical Red LED Bars per side
+      for (let t = -1; t <= 1; t++) {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.025, height * 0.14, 0.04), brakeMat);
+        bar.position.set(tx + t * 0.05, height * 0.48, -length * 0.525);
+        chassis.add(bar);
+        brakeLightsArr.push(bar);
+      }
+    });
+
+    chassis.userData.brakeLights = brakeLightsArr;
+    chassis.userData.indicators = [indFL, indFR];
+
+    // ── 7. Massive GT3 Carbon Swan-Neck Rear Wing ──
+    const wingW = width * 0.96;
+    const wingH = 0.38;
+    [-width * 0.26, width * 0.26].forEach(sx => {
+      const stanchion = new THREE.Mesh(new THREE.BoxGeometry(0.04, wingH, 0.16), carbonMat);
+      stanchion.position.set(sx, height * 0.52 + wingH * 0.5, -length * 0.44);
+      stanchion.rotation.x = 0.12;
+      chassis.add(stanchion);
+    });
+
+    const wingBlade = new THREE.Mesh(new THREE.BoxGeometry(wingW, 0.04, 0.28), carbonMat);
+    wingBlade.position.set(0, height * 0.52 + wingH, -length * 0.44);
+    wingBlade.rotation.x = -0.10;
+    wingBlade.castShadow = true;
+    chassis.add(wingBlade);
+
+    // Wing Endplates
+    [-wingW * 0.5, wingW * 0.5].forEach(wx => {
+      const endplate = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.20, 0.32), carbonMat);
+      endplate.position.set(wx, height * 0.52 + wingH, -length * 0.44);
+      chassis.add(endplate);
+    });
+
+    // ── 8. Carbon Rear Diffuser & Quad Titanium Exhaust Tips ──
+    const diffuser = new THREE.Mesh(new THREE.BoxGeometry(width * 0.90, height * 0.18, length * 0.14), carbonMat);
+    diffuser.position.set(0, height * 0.16, -length * 0.48);
+    chassis.add(diffuser);
+
+    [-0.32, -0.22, 0.22, 0.32].forEach(ex => {
+      const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.16, 16), chromeMat);
+      exhaust.rotateX(Math.PI / 2);
+      exhaust.position.set(ex * width, height * 0.18, -length * 0.54);
+      chassis.add(exhaust);
+    });
+
+    // Add Cockpit Interior
+    VehicleBuilder.addCockpitInterior(chassis, config, darkMat, chromeMat, leatherMat);
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // 3. HEAVY-DUTY SEMI TRUCK + ARTICULATED CARGO FREIGHT TRAILER
   // ═════════════════════════════════════════════════════════════════════════
   static buildTruckBody(chassis, config, bodyMat, accentMat, glassMat, darkMat, chromeMat, lightMat, brakeMat, indicatorMat, leatherMat) {
     const { length, width, height } = config.dimensions;
