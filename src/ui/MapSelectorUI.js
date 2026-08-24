@@ -20,12 +20,26 @@ export class MapSelectorUI {
         </div>
 
         <div class="map-cards-grid">
-          <!-- Card 1: Metropolis 3.2KM Open World -->
+          <!-- Card 1: Sepang International Circuit (MAIN TRACK) -->
+          <div class="track-card sepang-theme" data-map="sepang">
+            <div class="track-badge sepang-badge">🇲🇾 MAIN 2025 TRACK</div>
+            <div class="track-icon">🏎️</div>
+            <h3>SEPANG INTERNATIONAL CIRCUIT</h3>
+            <p>Official 2025 F1 & MotoGP Grand Prix Circuit! Double-Sided Hibiscus Grandstand, Pangkor Hairpins, 900m Straights & Sunway Turn 15.</p>
+            <div class="track-specs">
+              <span>📏 5.543 km Grand Prix Layout</span>
+              <span>🌺 Hibiscus Canopy Grandstand</span>
+              <span>⏱️ Full Lap & Sector Timing</span>
+            </div>
+            <button class="select-track-btn sepang-action-btn">RACE AT SEPANG</button>
+          </div>
+
+          <!-- Card 2: Metropolis 3.2KM Open World -->
           <div class="track-card" data-map="metropolis">
             <div class="track-badge">OPEN WORLD FREEROAM</div>
             <div class="track-icon">🌆</div>
             <h3>METROPOLIS 3.2KM OPEN WORLD</h3>
-            <p>Freeroam across 5 biomes: Downtown Skyscrapers, Alpine Mountains, Pine Forest, Coastal Beach Highway, and Glacier Ice Pass with 32 AI traffic bots.</p>
+            <p>Freeroam across 5 biomes: Downtown Skyscrapers, Alpine Mountains, Pine Forest, Beach Highway, and Glacier Pass with 32 AI traffic bots.</p>
             <div class="track-specs">
               <span>📏 3.2 km × 3.2 km World</span>
               <span>🚗 32 AI Traffic Bots</span>
@@ -34,26 +48,26 @@ export class MapSelectorUI {
             <button class="select-track-btn">DRIVE FREEROAM</button>
           </div>
 
-          <!-- Card 2: Indianapolis Motor Speedway -->
+          <!-- Card 3: Indianapolis Motor Speedway -->
           <div class="track-card race-theme" data-map="indianapolis">
-            <div class="track-badge race-badge">HISTORIC 2.5M OVAL</div>
+            <div class="track-badge race-badge">2.5M THE BRICKYARD</div>
             <div class="track-icon">🏁</div>
             <h3>INDIANAPOLIS MOTOR SPEEDWAY</h3>
-            <p>The legendary 2.5-Mile Oval / The Brickyard. Race at 230+ MPH across the Yard of Bricks, Pagoda Control Tower, Pit Lane, and high-banked turns against AI rivals!</p>
+            <p>The legendary 2.5-Mile Oval. Race at 230+ MPH across the Yard of Bricks, Pagoda Control Tower, Pit Lane, and high-banked turns against AI rivals!</p>
             <div class="track-specs">
               <span>🏎️ 2.5-Mile Rectangular Oval</span>
-              <span>⏱️ Real-Time Lap Timing</span>
               <span>🧱 The Yard of Bricks</span>
+              <span>⏱️ Real-Time Lap Timing</span>
             </div>
             <button class="select-track-btn race-action-btn">RACE THE BRICKYARD</button>
           </div>
 
-          <!-- Card 3: Circuit de Spa-Francorchamps -->
+          <!-- Card 4: Circuit de Spa-Francorchamps -->
           <div class="track-card spa-theme" data-map="spa">
             <div class="track-badge spa-badge">7.004 KM F1 / GT3</div>
             <div class="track-icon">🌲</div>
             <h3>CIRCUIT DE SPA-FRANCORCHAMPS</h3>
-            <p>The Rollercoaster of the Ardennes! Experience the steep uphill climb of Eau Rouge & Raidillon, flat-out Kemmel Straight, Pouhon, Blanchimont & Bus Stop chicane.</p>
+            <p>The Rollercoaster of the Ardennes! Experience Eau Rouge & Raidillon uphill climb (+28m), Kemmel Straight, Pouhon & Blanchimont.</p>
             <div class="track-specs">
               <span>🏔️ +28m Raidillon Elevation</span>
               <span>⏱️ 3 Sector Split Timing</span>
@@ -127,8 +141,8 @@ export class MapSelectorUI {
         border: 1px solid rgba(255, 255, 255, 0.15);
         box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
         border-radius: 16px;
-        width: 94%;
-        max-width: 1080px;
+        width: 96%;
+        max-width: 1200px;
         max-height: 90vh;
         overflow-y: auto;
         padding: 28px;
@@ -165,10 +179,15 @@ export class MapSelectorUI {
       }
       .map-cards-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
       }
-      @media (max-width: 960px) {
+      @media (max-width: 1080px) {
+        .map-cards-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 640px) {
         .map-cards-grid {
           grid-template-columns: 1fr;
         }
@@ -189,6 +208,10 @@ export class MapSelectorUI {
         border-color: #3b82f6;
         box-shadow: 0 15px 35px rgba(59, 130, 246, 0.25);
       }
+      .track-card.sepang-theme:hover {
+        border-color: #06b6d4;
+        box-shadow: 0 15px 35px rgba(6, 182, 212, 0.3);
+      }
       .track-card.race-theme:hover {
         border-color: #eab308;
         box-shadow: 0 15px 35px rgba(234, 179, 8, 0.25);
@@ -201,12 +224,16 @@ export class MapSelectorUI {
         position: absolute;
         top: 14px;
         right: 14px;
-        font-size: 10px;
+        font-size: 9.5px;
         font-weight: bold;
         background: #2563eb;
-        padding: 4px 10px;
+        padding: 4px 8px;
         border-radius: 20px;
         letter-spacing: 0.5px;
+      }
+      .track-badge.sepang-badge {
+        background: linear-gradient(135deg, #06b6d4, #0891b2);
+        color: #fff;
       }
       .track-badge.race-badge {
         background: linear-gradient(135deg, #eab308, #ca8a04);
@@ -217,16 +244,16 @@ export class MapSelectorUI {
         color: #fff;
       }
       .track-icon {
-        font-size: 38px;
+        font-size: 36px;
         margin-bottom: 10px;
       }
       .track-card h3 {
-        font-size: 16px;
+        font-size: 15px;
         margin: 0 0 10px 0;
         color: #fff;
       }
       .track-card p {
-        font-size: 12.5px;
+        font-size: 12px;
         color: #94a3b8;
         line-height: 1.45;
         flex-grow: 1;
@@ -235,8 +262,8 @@ export class MapSelectorUI {
       .track-specs {
         display: flex;
         flex-direction: column;
-        gap: 6px;
-        font-size: 11.5px;
+        gap: 5px;
+        font-size: 11px;
         color: #cbd5e1;
         background: rgba(15, 23, 42, 0.6);
         padding: 10px 12px;
@@ -250,13 +277,20 @@ export class MapSelectorUI {
         padding: 11px;
         border-radius: 8px;
         font-weight: bold;
-        font-size: 12.5px;
+        font-size: 12px;
         letter-spacing: 0.5px;
         cursor: pointer;
         transition: 0.2s;
       }
       .select-track-btn:hover {
         background: #1d4ed8;
+      }
+      .sepang-action-btn {
+        background: linear-gradient(135deg, #06b6d4, #0891b2);
+        color: #fff;
+      }
+      .sepang-action-btn:hover {
+        background: linear-gradient(135deg, #22d3ee, #06b6d4);
       }
       .race-action-btn {
         background: linear-gradient(135deg, #eab308, #ca8a04);

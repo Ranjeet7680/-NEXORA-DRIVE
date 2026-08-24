@@ -18,6 +18,7 @@ import { ParticleSystemManager } from './engine/ParticleSystemManager.js';
 import { VehicleBuilder } from './vehicles/VehicleBuilder.js';
 import { VEHICLE_CONFIGS } from './config.js';
 
+import { SepangTrackManager } from './engine/SepangTrackManager.js';
 import { IndianapolisTrackManager } from './engine/IndianapolisTrackManager.js';
 import { SpaTrackManager } from './engine/SpaTrackManager.js';
 
@@ -53,8 +54,9 @@ class Game {
     this.aiSafetySystem = new AISafetySystem();
     this.particleManager = new ParticleSystemManager(this.sceneManager.scene);
 
-    // Multi-Map Architecture (Metropolis Open World vs. Indianapolis Speedway vs. Spa-Francorchamps)
-    this.currentMapId = 'metropolis';
+    // Multi-Map Architecture (Sepang International Circuit 2025 as Main Map)
+    this.currentMapId = 'sepang';
+    this.sepangManager = null;
     this.indianapolisManager = null;
     this.spaManager = null;
 
@@ -101,16 +103,17 @@ class Game {
 
     loadingScreen.show(currentConfig.loadingImage);
 
-    // 2. Generate 5 Open-World Biomes
-    this.terrainManager.generateWorld();
+    // 2. Initialize Sepang International Circuit as Primary Main Map
+    this.sepangManager = new SepangTrackManager(this.sceneManager.scene);
+    this.sepangManager.init();
+    this.physicsEngine.terrainManager = this.sepangManager;
 
-    // 3. Spawn Initial Selected Vehicle
+    // 3. Spawn Initial Selected Vehicle on Sepang Main Pit Straight
     this.spawnVehicle(this.saveData.selectedVehicle);
+    this.physicsEngine.position.set(0, 0.45, -450);
+    this.physicsEngine.rotation.set(0, 0, 0);
 
-    // 4. Initialize AI Traffic & Pedestrians
-    this.trafficManager.init();
-
-    // 5. Initialize UI Overlays
+    // 4. Initialize UI Overlays
     this.initUI();
 
     // 6. Bind Keyboard Controls
@@ -259,12 +262,33 @@ class Game {
     this.currentMapId = mapId;
 
     // 1. Hide all non-active track groups
+    if (this.sepangManager) this.sepangManager.trackGroup.visible = false;
     if (this.indianapolisManager) this.indianapolisManager.trackGroup.visible = false;
     if (this.spaManager) this.spaManager.trackGroup.visible = false;
     if (this.terrainManager.terrainMesh) this.terrainManager.terrainMesh.visible = false;
     this.trafficManager.trafficVehicles.forEach(v => v.mesh.visible = false);
 
-    if (mapId === 'spa') {
+    if (mapId === 'sepang') {
+      // Initialize or Show Sepang International Circuit
+      if (!this.sepangManager) {
+        this.sepangManager = new SepangTrackManager(this.sceneManager.scene);
+        this.sepangManager.init();
+      } else {
+        this.sepangManager.trackGroup.visible = true;
+      }
+
+      this.physicsEngine.terrainManager = this.sepangManager;
+
+      // Spawn at Main Pit Straight facing Turn 1
+      this.physicsEngine.position.set(0, 0.45, -450);
+      this.physicsEngine.rotation.set(0, 0, 0);
+      this.physicsEngine.velocity.set(0, 0, 0);
+      this.physicsEngine.angularVelocity = 0;
+
+      if (this.copilotHUD) {
+        this.copilotHUD.showBubbleResponse('🇲🇾 Welcome to Sepang International Circuit! 2025 Layout Ready.');
+      }
+    } else if (mapId === 'spa') {
       // Initialize or Show Circuit de Spa-Francorchamps
       if (!this.spaManager) {
         this.spaManager = new SpaTrackManager(this.sceneManager.scene);
@@ -306,8 +330,13 @@ class Game {
       }
     } else {
       // Metropolis Open World
-      if (this.terrainManager.terrainMesh) this.terrainManager.terrainMesh.visible = true;
-      this.trafficManager.trafficVehicles.forEach(v => v.mesh.visible = true);
+      if (!this.terrainManager.terrainMesh) {
+        this.terrainManager.generateWorld();
+        this.trafficManager.init();
+      } else {
+        this.terrainManager.terrainMesh.visible = true;
+        this.trafficManager.trafficVehicles.forEach(v => v.mesh.visible = true);
+      }
 
       this.physicsEngine.terrainManager = this.terrainManager;
 
@@ -541,9 +570,20 @@ class Game {
     // 10. Gameplay Systems (fuel, nitro, drift, speed cams, water)
     this._updateGameplaySystems(deltaTime);
 
-    // 11. Race Track AI & Lap Tracking Step (Indianapolis & Spa-Francorchamps)
+    // 11. Race Track AI & Lap Tracking Step (Sepang, Indianapolis & Spa-Francorchamps)
     let raceTelemetry = { isRaceTrack: false };
-    if (this.currentMapId === 'indianapolis' && this.indianapolisManager) {
+    if (this.currentMapId === 'sepang' && this.sepangManager) {
+      this.sepangManager.update(deltaTime, this.physicsEngine.position);
+      const rData = this.sepangManager.getTelemetry();
+      raceTelemetry = {
+        isRaceTrack: true,
+        currentLap: rData.currentLap,
+        totalLaps: rData.totalLaps,
+        currentLapTime: rData.currentLapTime,
+        bestLapTime: rData.bestLapTime,
+        lastLapTime: rData.lastLapTime
+      };
+    } else if (this.currentMapId === 'indianapolis' && this.indianapolisManager) {
       this.indianapolisManager.update(deltaTime, this.physicsEngine.position);
       const rData = this.indianapolisManager.getTelemetry();
       raceTelemetry = {

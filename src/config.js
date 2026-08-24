@@ -1,6 +1,14 @@
 // Configuration for NEXORA DRIVE - Open World Driving Simulator
 
 export const MAP_CONFIGS = {
+  sepang: {
+    id: 'sepang',
+    name: 'Sepang International Circuit (2025)',
+    subTitle: 'Official F1/MotoGP Layout, Hibiscus Grandstand, 900m Straights & Sunway Hairpin',
+    icon: '🇲🇾',
+    spawnPoint: { x: 0, y: 0.45, z: -450, rotY: 0 },
+    type: 'race_track'
+  },
   metropolis: {
     id: 'metropolis',
     name: 'Metropolis 3.2KM Open World',
@@ -22,7 +30,7 @@ export const MAP_CONFIGS = {
     name: 'Circuit de Spa-Francorchamps',
     subTitle: 'Eau Rouge, Raidillon, Kemmel Straight, Pouhon & Blanchimont',
     icon: '🌲',
-    spawnPoint: { x: 0, y: 0.45, z: -250, rotY: 0 },
+    spawnPoint: { x: 0, y: 0.45, z: -250, rotY: Math.PI / 2 },
     type: 'race_track'
   }
 };
