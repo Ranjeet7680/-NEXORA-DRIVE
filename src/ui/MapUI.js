@@ -12,7 +12,7 @@ export class MapUI {
     this.playerRot = 0;
 
     // World size for map projection
-    this.WORLD_SIZE = 2400;
+    this.WORLD_SIZE = 3200;
 
     this.initUI();
     this.drawStaticMap();
@@ -265,7 +265,7 @@ export class MapUI {
     }
 
     // ── 9. Ring Highway ──
-    const ringR = (565 / (this.WORLD_SIZE / 2)) * half; // scale ring radius to canvas
+    const ringR = (680 / (this.WORLD_SIZE / 2)) * half; // scale ring radius to canvas
     // Road fill (dark asphalt band)
     ctx.strokeStyle = '#2d3340';
     ctx.lineWidth = 18;

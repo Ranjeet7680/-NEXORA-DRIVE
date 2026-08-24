@@ -223,7 +223,7 @@ export class HUD {
     const h = this.miniMapCanvas.height; // 130
     const cx = w / 2;
     const cy = h / 2;
-    const scale = 0.095; // world units to minimap pixels
+    const scale = 0.080; // world units to minimap pixels
 
     ctx.clearRect(0, 0, w, h);
 
@@ -238,7 +238,7 @@ export class HUD {
     const rz = (wz) => cy + (wz - playerPos.z) * scale;
 
     // ── 1. Biome background fill (player-relative quadrant detection) ──
-    const WORLD_R = 1200;
+    const WORLD_R = 1600;
 
     // Forest NW (worldX < 0, worldZ < 0)
     ctx.fillStyle = '#1a4a10';
@@ -283,16 +283,16 @@ export class HUD {
     ctx.fillRect(zeroX, zeroZ, seX - zeroX, seZ - zeroZ);
 
     // ── 2. Ring Highway ──
-    const ringRadiusPx = 565 * scale;
+    const ringRadiusPx = 680 * scale;
     // Road band (dark)
     ctx.strokeStyle = '#2d3340';
-    ctx.lineWidth = 11 * scale;
+    ctx.lineWidth = 14 * scale;
     ctx.beginPath();
     ctx.arc(rx(0), rz(0), ringRadiusPx, 0, Math.PI * 2);
     ctx.stroke();
     // Asphalt surface
     ctx.strokeStyle = '#3a3f4a';
-    ctx.lineWidth = 9 * scale;
+    ctx.lineWidth = 11 * scale;
     ctx.beginPath();
     ctx.arc(rx(0), rz(0), ringRadiusPx, 0, Math.PI * 2);
     ctx.stroke();
@@ -308,16 +308,16 @@ export class HUD {
     // ── 3. City Grid Roads ──
     ctx.strokeStyle = '#3a4050';
     ctx.lineWidth = 5 * scale;
-    for (let gx = -360; gx <= 360; gx += 120) {
+    for (let gx = -480; gx <= 480; gx += 120) {
       ctx.beginPath();
-      ctx.moveTo(rx(gx), rz(-400));
-      ctx.lineTo(rx(gx), rz(400));
+      ctx.moveTo(rx(gx), rz(-500));
+      ctx.lineTo(rx(gx), rz(500));
       ctx.stroke();
     }
-    for (let gz = -360; gz <= 360; gz += 120) {
+    for (let gz = -480; gz <= 480; gz += 120) {
       ctx.beginPath();
-      ctx.moveTo(rx(-400), rz(gz));
-      ctx.lineTo(rx(400), rz(gz));
+      ctx.moveTo(rx(-500), rz(gz));
+      ctx.lineTo(rx(500), rz(gz));
       ctx.stroke();
     }
 

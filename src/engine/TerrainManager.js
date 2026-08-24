@@ -5,8 +5,8 @@ import { TextureGenerator } from './TextureGenerator.js';
 export class TerrainManager {
   constructor(scene) {
     this.scene = scene;
-    this.size = 2400; // 2400x2400 world map
-    this.segments = 160;
+    this.size = 3200; // Expanded 3200x3200 open world map (3.2 km x 3.2 km)
+    this.segments = 180;
     this.terrainMesh = null;
     this.roadMeshes = [];
     this.buildings = [];
@@ -56,37 +56,37 @@ export class TerrainManager {
     const nx = x / half;
     const nz = z / half;
 
-    // Flatten central hub & ring highway road circuit (Radius 565)
+    // Flatten central hub & ring highway road circuit (Radius 680)
     const distFromOrigin = Math.sqrt(x * x + z * z);
-    if (distFromOrigin < 290) return 0;
+    if (distFromOrigin < 340) return 0;
 
     // North-East: Alpine Mountains (High steep peaks)
     if (nx > 0.1 && nz < -0.1) {
-      const hill1 = Math.sin(x * 0.015) * Math.cos(z * 0.015) * 80;
-      const hill2 = Math.sin(x * 0.035 + z * 0.035) * 45;
-      const hill3 = Math.cos(x * 0.06) * 20;
-      const detail = Math.sin(x * 0.12 + z * 0.09) * 8;
+      const hill1 = Math.sin(x * 0.012) * Math.cos(z * 0.012) * 95;
+      const hill2 = Math.sin(x * 0.028 + z * 0.028) * 55;
+      const hill3 = Math.cos(x * 0.05) * 25;
+      const detail = Math.sin(x * 0.10 + z * 0.08) * 10;
       return Math.max(0, hill1 + hill2 + hill3 + detail);
     }
 
     // South-East: Ice Hills & Glaciers (Rolling snow mountains)
     if (nx > 0.1 && nz > 0.1) {
-      const hill = Math.sin(x * 0.012) * Math.sin(z * 0.012) * 60;
-      const peak = Math.cos(x * 0.025 + z * 0.025) * 28;
-      const detail = Math.sin(x * 0.08 + z * 0.06) * 6;
+      const hill = Math.sin(x * 0.010) * Math.sin(z * 0.010) * 75;
+      const peak = Math.cos(x * 0.020 + z * 0.020) * 35;
+      const detail = Math.sin(x * 0.07 + z * 0.05) * 8;
       return Math.max(0, hill + peak + detail);
     }
 
     // North-West: Forest Valley (Gentle rolling hills)
     if (nx < -0.1 && nz < -0.1) {
-      const roll = Math.sin(x * 0.02) * Math.cos(z * 0.02) * 22;
-      const detail = Math.sin(x * 0.06 + z * 0.04) * 5;
+      const roll = Math.sin(x * 0.015) * Math.cos(z * 0.015) * 28;
+      const detail = Math.sin(x * 0.05 + z * 0.035) * 6;
       return Math.max(0, roll + detail);
     }
 
     // South-West: River & Beach Basin
     if (nx < -0.1 && nz > 0.1) {
-      const basin = -14 + Math.sin(x * 0.012) * 6;
+      const basin = -16 + Math.sin(x * 0.010) * 8;
       return Math.min(2, basin);
     }
 
@@ -138,34 +138,30 @@ export class TerrainManager {
       let c;
 
       if (biome === BIOMES.CITY) {
-        // Road area is dark, outer city transitions to grass
-        if (distFromOrigin < 140) {
-          c = colorCity.clone();
+        if (distFromOrigin < 650) {
+          c = (distFromOrigin < 280) ? colorGrass : colorCity;
         } else {
-          const t = Math.min(1, (distFromOrigin - 140) / 250);
-          c = colorCity.clone().lerp(colorGrass, t);
+          c = colorCity;
         }
       } else if (biome === BIOMES.FOREST) {
-        if (height > 18) c = colorMountainLow.clone().lerp(colorForest, 0.35);
-        else if (height > 8) c = colorForest.clone();
-        else c = colorForestGrass.clone();
+        c = (height > 15) ? colorForest : colorForestGrass;
       } else if (biome === BIOMES.MOUNTAINS) {
-        if (height > 65) c = colorSnow.clone();
-        else if (height > 40) c = colorSnow.clone().lerp(colorMountainMid, (65 - height) / 25);
-        else if (height > 20) c = colorMountainMid.clone();
-        else c = colorMountainLow.clone();
+        if (height > 65) c = colorSnow;
+        else if (height > 35) c = colorMountainMid;
+        else c = colorMountainLow;
       } else if (biome === BIOMES.RIVER) {
-        if (height < -4) c = colorWater.clone();
-        else c = colorSand.clone();
+        if (height < -6) c = colorWater;
+        else if (height < 2) c = colorSand;
+        else c = colorGrass;
       } else if (biome === BIOMES.ICE) {
-        if (height > 45) c = colorIceHigh.clone();
-        else if (height > 22) c = colorIceMid.clone();
-        else c = colorIceLow.clone();
+        if (height > 50) c = colorIceHigh;
+        else if (height > 25) c = colorIceMid;
+        else c = colorIceLow;
       } else {
-        c = colorGrass.clone();
+        c = colorGrass;
       }
 
-      colors[i * 3]     = c.r;
+      colors[i * 3 + 0] = c.r;
       colors[i * 3 + 1] = c.g;
       colors[i * 3 + 2] = c.b;
     }
@@ -193,8 +189,8 @@ export class TerrainManager {
     const whiteLineMat  = new THREE.MeshBasicMaterial({ color: 0xf0f0f0 });
     const guardrailMat  = new THREE.MeshStandardMaterial({ color: 0x8899aa, roughness: 0.25, metalness: 0.85 });
 
-    // 1. Main Outer Ring Highway (Radius 565, Width 36)
-    const ringGeo = new THREE.RingGeometry(546, 584, 160);
+    // 1. Main Expanded Outer Ring Highway (Radius 680, Width 44)
+    const ringGeo = new THREE.RingGeometry(658, 702, 180);
     ringGeo.rotateX(-Math.PI / 2);
     const ringMesh = new THREE.Mesh(ringGeo, asphaltMat);
     ringMesh.position.y = 0.35; // Raised higher so road sits cleanly above terrain
@@ -202,15 +198,15 @@ export class TerrainManager {
     this.scene.add(ringMesh);
 
     // Double Yellow Center Line
-    const yellowLineGeo = new THREE.RingGeometry(563, 565.5, 160);
+    const yellowLineGeo = new THREE.RingGeometry(678.5, 681.5, 180);
     yellowLineGeo.rotateX(-Math.PI / 2);
     const ylMesh = new THREE.Mesh(yellowLineGeo, yellowLineMat);
     ylMesh.position.y = 0.25;
     this.scene.add(ylMesh);
 
     // White Edge Lines (inner & outer)
-    [549, 581].forEach(r => {
-      const wGeo = new THREE.RingGeometry(r, r + 1.5, 160);
+    [662, 698].forEach(r => {
+      const wGeo = new THREE.RingGeometry(r, r + 1.5, 180);
       wGeo.rotateX(-Math.PI / 2);
       const wMesh = new THREE.Mesh(wGeo, whiteLineMat);
       wMesh.position.y = 0.25;
@@ -218,8 +214,8 @@ export class TerrainManager {
     });
 
     // Lane divider dashes — dotted white line on outer lane
-    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 48) {
-      const r = 572;
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 64) {
+      const r = 690;
       const dx = Math.sin(angle) * r;
       const dz = Math.cos(angle) * r;
       const dashGeo = new THREE.PlaneGeometry(1.2, 12);
@@ -231,9 +227,9 @@ export class TerrainManager {
     }
 
     // Metallic Guardrails outer edge + Collision bounding boxes
-    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 32) {
-      const gx = Math.sin(angle) * 588;
-      const gz = Math.cos(angle) * 588;
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 36) {
+      const gx = Math.sin(angle) * 708;
+      const gz = Math.cos(angle) * 708;
       const railGeo = new THREE.BoxGeometry(14, 1.4, 0.5);
       const rail = new THREE.Mesh(railGeo, guardrailMat);
       rail.position.set(gx, 0.9, gz);

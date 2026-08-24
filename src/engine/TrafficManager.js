@@ -41,12 +41,12 @@ export class TrafficManager {
         spoiler: preset.type === 'car' ? 'sport_wing' : 'none'
       });
 
-      // Distribute cars along the ring highway (radius 565) and city grid roads
+      // Distribute cars along the ring highway (radius 680) and city grid roads
       const isHighway = i < 24;
       let pos = new THREE.Vector3();
       let rotY = 0;
       let laneOffset = laneOffsets[i % laneOffsets.length];
-      let laneRadius = 565 + laneOffset;
+      let laneRadius = 680 + laneOffset;
       let currentAngle = (i / 24) * Math.PI * 2;
       const direction = (laneOffset > 0) ? 1 : -1; // Opposing traffic flow lanes!
 
