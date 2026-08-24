@@ -16,6 +16,14 @@ export const MAP_CONFIGS = {
     icon: '🏁',
     spawnPoint: { x: 0, y: 0.45, z: -490, rotY: Math.PI / 2 },
     type: 'race_track'
+  },
+  spa: {
+    id: 'spa',
+    name: 'Circuit de Spa-Francorchamps',
+    subTitle: 'Eau Rouge, Raidillon, Kemmel Straight, Pouhon & Blanchimont',
+    icon: '🌲',
+    spawnPoint: { x: 0, y: 0.45, z: -250, rotY: 0 },
+    type: 'race_track'
   }
 };
 

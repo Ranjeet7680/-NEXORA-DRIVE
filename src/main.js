@@ -19,6 +19,7 @@ import { VehicleBuilder } from './vehicles/VehicleBuilder.js';
 import { VEHICLE_CONFIGS } from './config.js';
 
 import { IndianapolisTrackManager } from './engine/IndianapolisTrackManager.js';
+import { SpaTrackManager } from './engine/SpaTrackManager.js';
 
 import { LoadingScreen } from './ui/LoadingScreen.js';
 import { SteeringWheelUI } from './ui/SteeringWheelUI.js';
@@ -52,9 +53,10 @@ class Game {
     this.aiSafetySystem = new AISafetySystem();
     this.particleManager = new ParticleSystemManager(this.sceneManager.scene);
 
-    // Multi-Map Architecture (Metropolis Open World vs. Indianapolis Motor Speedway)
+    // Multi-Map Architecture (Metropolis Open World vs. Indianapolis Speedway vs. Spa-Francorchamps)
     this.currentMapId = 'metropolis';
     this.indianapolisManager = null;
+    this.spaManager = null;
 
     this.currentVehicleMesh = null;
     this.activeMission = null;
@@ -256,11 +258,33 @@ class Game {
     if (this.currentMapId === mapId) return;
     this.currentMapId = mapId;
 
-    if (mapId === 'indianapolis') {
-      // Hide Open World Terrain & Traffic
-      if (this.terrainManager.terrainMesh) this.terrainManager.terrainMesh.visible = false;
-      this.trafficManager.trafficVehicles.forEach(v => v.mesh.visible = false);
+    // 1. Hide all non-active track groups
+    if (this.indianapolisManager) this.indianapolisManager.trackGroup.visible = false;
+    if (this.spaManager) this.spaManager.trackGroup.visible = false;
+    if (this.terrainManager.terrainMesh) this.terrainManager.terrainMesh.visible = false;
+    this.trafficManager.trafficVehicles.forEach(v => v.mesh.visible = false);
 
+    if (mapId === 'spa') {
+      // Initialize or Show Circuit de Spa-Francorchamps
+      if (!this.spaManager) {
+        this.spaManager = new SpaTrackManager(this.sceneManager.scene);
+        this.spaManager.init();
+      } else {
+        this.spaManager.trackGroup.visible = true;
+      }
+
+      this.physicsEngine.terrainManager = this.spaManager;
+
+      // Spawn at Main Pit Straight (facing Turn 1 La Source)
+      this.physicsEngine.position.set(0, 0.45, -250);
+      this.physicsEngine.rotation.set(0, Math.PI / 2, 0);
+      this.physicsEngine.velocity.set(0, 0, 0);
+      this.physicsEngine.angularVelocity = 0;
+
+      if (this.copilotHUD) {
+        this.copilotHUD.showBubbleResponse('🌲 Welcome to Circuit de Spa-Francorchamps! Eau Rouge & Raidillon Ready.');
+      }
+    } else if (mapId === 'indianapolis') {
       // Initialize or Show Indianapolis Speedway
       if (!this.indianapolisManager) {
         this.indianapolisManager = new IndianapolisTrackManager(this.sceneManager.scene);
@@ -282,10 +306,6 @@ class Game {
       }
     } else {
       // Metropolis Open World
-      if (this.indianapolisManager) {
-        this.indianapolisManager.trackGroup.visible = false;
-      }
-
       if (this.terrainManager.terrainMesh) this.terrainManager.terrainMesh.visible = true;
       this.trafficManager.trafficVehicles.forEach(v => v.mesh.visible = true);
 
@@ -521,11 +541,22 @@ class Game {
     // 10. Gameplay Systems (fuel, nitro, drift, speed cams, water)
     this._updateGameplaySystems(deltaTime);
 
-    // 11. Indianapolis Speedway AI & Lap Tracking Step
+    // 11. Race Track AI & Lap Tracking Step (Indianapolis & Spa-Francorchamps)
     let raceTelemetry = { isRaceTrack: false };
     if (this.currentMapId === 'indianapolis' && this.indianapolisManager) {
       this.indianapolisManager.update(deltaTime, this.physicsEngine.position);
       const rData = this.indianapolisManager.getTelemetry();
+      raceTelemetry = {
+        isRaceTrack: true,
+        currentLap: rData.currentLap,
+        totalLaps: rData.totalLaps,
+        currentLapTime: rData.currentLapTime,
+        bestLapTime: rData.bestLapTime,
+        lastLapTime: rData.lastLapTime
+      };
+    } else if (this.currentMapId === 'spa' && this.spaManager) {
+      this.spaManager.update(deltaTime, this.physicsEngine.position);
+      const rData = this.spaManager.getTelemetry();
       raceTelemetry = {
         isRaceTrack: true,
         currentLap: rData.currentLap,
