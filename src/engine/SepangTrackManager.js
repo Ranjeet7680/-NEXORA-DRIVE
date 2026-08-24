@@ -494,8 +494,7 @@ export class SepangTrackManager {
   }
 
   getHeightAt(x, z) {
-    const hill = Math.sin(x * 0.003) * Math.cos(z * 0.003) * 18;
-    return Math.max(-10, hill - 1);
+    return 0; // Flat racetrack plane
   }
 
   getBiomeAt(x, z) {

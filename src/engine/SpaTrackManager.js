@@ -506,10 +506,10 @@ export class SpaTrackManager {
   }
 
   getHeightAt(x, z) {
-    // Return height from closest point along the 3D spline track
+    if (z < -100) return 0;
     const hill1 = Math.sin(x * 0.003) * Math.cos(z * 0.003) * 35;
     const hill2 = Math.sin(x * 0.008 + z * 0.008) * 16;
-    return Math.max(-25, hill1 + hill2 - 2);
+    return Math.max(0, hill1 + hill2 - 2);
   }
 
   getBiomeAt(x, z) {
