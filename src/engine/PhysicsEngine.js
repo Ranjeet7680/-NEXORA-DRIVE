@@ -255,6 +255,13 @@ export class PhysicsEngine {
       indicators[1].material.emissiveIntensity = rightOn ? 3.0 : 0.0;
     }
 
+    // Police Siren Lightbar Strobe Animation
+    const policeLights = this.vehicleMesh.userData.policeLights;
+    if (policeLights && policeLights.length >= 2) {
+      policeLights[0].material.emissiveIntensity = this.indicatorBlinkOn ? 5.0 : 0.3;
+      policeLights[1].material.emissiveIntensity = this.indicatorBlinkOn ? 0.3 : 5.0;
+    }
+
     // Speedometer (km/h)
     this.speedKmh = Math.round(Math.abs(currentForwardSpeed) * 3.6);
     this.updateRpmAndGear();

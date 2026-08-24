@@ -406,8 +406,15 @@ class Game {
     // 1. Physics Engine Step
     this.physicsEngine.update(deltaTime);
 
-    // 2. Camera Manager Step
-    this.cameraManager.update(deltaTime);
+    // 2. Camera Manager Step with Dynamic Telemetry for TPP & FPP
+    this.cameraManager.update(deltaTime, {
+      speedKmh: this.physicsEngine.speedKmh,
+      rpm: this.physicsEngine.rpm,
+      nitroActive: this.nitroActive,
+      isDrifting: this.physicsEngine.isDrifting,
+      inputSteer: this.physicsEngine.inputSteer,
+      inputThrottle: this.physicsEngine.inputThrottle
+    });
 
     // 3. AI Traffic Step
     this.trafficManager.update(deltaTime, this.physicsEngine.position);
