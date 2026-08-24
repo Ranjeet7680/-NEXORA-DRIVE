@@ -18,12 +18,15 @@ import { ParticleSystemManager } from './engine/ParticleSystemManager.js';
 import { VehicleBuilder } from './vehicles/VehicleBuilder.js';
 import { VEHICLE_CONFIGS } from './config.js';
 
+import { IndianapolisTrackManager } from './engine/IndianapolisTrackManager.js';
+
 import { LoadingScreen } from './ui/LoadingScreen.js';
 import { SteeringWheelUI } from './ui/SteeringWheelUI.js';
 import { HUD } from './ui/HUD.js';
 import { CopilotHUD } from './ui/CopilotHUD.js';
 import { GarageUI } from './ui/GarageUI.js';
 import { MapUI } from './ui/MapUI.js';
+import { MapSelectorUI } from './ui/MapSelectorUI.js';
 import { MissionsUI } from './ui/MissionsUI.js';
 import { SettingsUI } from './ui/SettingsUI.js';
 
@@ -48,6 +51,10 @@ class Game {
     this.aiNavigation = new AINavigation(this.sceneManager.scene);
     this.aiSafetySystem = new AISafetySystem();
     this.particleManager = new ParticleSystemManager(this.sceneManager.scene);
+
+    // Multi-Map Architecture (Metropolis Open World vs. Indianapolis Motor Speedway)
+    this.currentMapId = 'metropolis';
+    this.indianapolisManager = null;
 
     this.currentVehicleMesh = null;
     this.activeMission = null;
@@ -142,6 +149,7 @@ class Game {
 
     // In-Game Cyber HUD
     this.hud = new HUD(this.appContainer, {
+      onOpenMapSelector: () => this.mapSelectorUI.show(),
       onOpenGarage: () => this.garageUI.show(),
       onOpenMap: () => this.mapUI.show(),
       onOpenMissions: () => this.missionsUI.show(),
@@ -162,6 +170,9 @@ class Game {
       onHandbrakePress: (pressed) => { this.physicsEngine.inputHandbrake = pressed; },
       onNitroPress: (pressed) => { this.nitroActive = pressed && (this.nitro > 5); }
     });
+
+    // Map Selector Modal
+    this.mapSelectorUI = new MapSelectorUI(this.appContainer, (mapId) => this.switchMap(mapId));
 
     // Settings UI
     this.settingsUI = new SettingsUI(this.appContainer, this.settingsManager);
@@ -239,6 +250,57 @@ class Game {
         }
       }
     });
+  }
+
+  switchMap(mapId) {
+    if (this.currentMapId === mapId) return;
+    this.currentMapId = mapId;
+
+    if (mapId === 'indianapolis') {
+      // Hide Open World Terrain & Traffic
+      if (this.terrainManager.terrainMesh) this.terrainManager.terrainMesh.visible = false;
+      this.trafficManager.trafficVehicles.forEach(v => v.mesh.visible = false);
+
+      // Initialize or Show Indianapolis Speedway
+      if (!this.indianapolisManager) {
+        this.indianapolisManager = new IndianapolisTrackManager(this.sceneManager.scene);
+        this.indianapolisManager.init();
+      } else {
+        this.indianapolisManager.trackGroup.visible = true;
+      }
+
+      this.physicsEngine.terrainManager = this.indianapolisManager;
+
+      // Spawn on Front Straightaway at Yard of Bricks
+      this.physicsEngine.position.set(0, 0.45, -490);
+      this.physicsEngine.rotation.set(0, Math.PI / 2, 0);
+      this.physicsEngine.velocity.set(0, 0, 0);
+      this.physicsEngine.angularVelocity = 0;
+
+      if (this.copilotHUD) {
+        this.copilotHUD.showBubbleResponse('🏁 Welcome to Indianapolis Motor Speedway! 2.5-Mile Oval Race Ready.');
+      }
+    } else {
+      // Metropolis Open World
+      if (this.indianapolisManager) {
+        this.indianapolisManager.trackGroup.visible = false;
+      }
+
+      if (this.terrainManager.terrainMesh) this.terrainManager.terrainMesh.visible = true;
+      this.trafficManager.trafficVehicles.forEach(v => v.mesh.visible = true);
+
+      this.physicsEngine.terrainManager = this.terrainManager;
+
+      // Spawn at Central City Hub
+      this.physicsEngine.position.set(0, 0.45, 0);
+      this.physicsEngine.rotation.set(0, 0, 0);
+      this.physicsEngine.velocity.set(0, 0, 0);
+      this.physicsEngine.angularVelocity = 0;
+
+      if (this.copilotHUD) {
+        this.copilotHUD.showBubbleResponse('🏙️ Switched to Metropolis 3.2KM Open World freeroam.');
+      }
+    }
   }
 
   startDrivingMode() {
@@ -459,7 +521,22 @@ class Game {
     // 10. Gameplay Systems (fuel, nitro, drift, speed cams, water)
     this._updateGameplaySystems(deltaTime);
 
-    // 11. Update HUD Overlay
+    // 11. Indianapolis Speedway AI & Lap Tracking Step
+    let raceTelemetry = { isRaceTrack: false };
+    if (this.currentMapId === 'indianapolis' && this.indianapolisManager) {
+      this.indianapolisManager.update(deltaTime, this.physicsEngine.position);
+      const rData = this.indianapolisManager.getTelemetry();
+      raceTelemetry = {
+        isRaceTrack: true,
+        currentLap: rData.currentLap,
+        totalLaps: rData.totalLaps,
+        currentLapTime: rData.currentLapTime,
+        bestLapTime: rData.bestLapTime,
+        lastLapTime: rData.lastLapTime
+      };
+    }
+
+    // 12. Update HUD Overlay
     const hours = Math.floor(this.weatherManager.timeOfDay);
     const mins  = Math.floor((this.weatherManager.timeOfDay % 1) * 60);
     const timeStr = `${hours < 10 ? '0' : ''}${hours}:${mins < 10 ? '0' : ''}${mins}`;
@@ -477,7 +554,7 @@ class Game {
       this.physicsEngine.position,
       this.physicsEngine.rotation,
       this.aiNavigation.turnInstruction,
-      // Extra gameplay & lighting data
+      // Extra gameplay & lighting & race telemetry data
       {
         fuel: this.fuel,
         nitro: this.nitro,
@@ -487,7 +564,8 @@ class Game {
         headlightState: this.physicsEngine.headlightState,
         indicatorState: this.physicsEngine.indicatorState,
         indicatorBlinkOn: this.physicsEngine.indicatorBlinkOn,
-        damageHealth: this.physicsEngine.damageHealth
+        damageHealth: this.physicsEngine.damageHealth,
+        ...raceTelemetry
       }
     );
 

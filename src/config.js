@@ -1,5 +1,24 @@
 // Configuration for NEXORA DRIVE - Open World Driving Simulator
 
+export const MAP_CONFIGS = {
+  metropolis: {
+    id: 'metropolis',
+    name: 'Metropolis 3.2KM Open World',
+    subTitle: 'City, Alpine Mountains, Pine Forest, Beach & Glacier Pass',
+    icon: '🌆',
+    spawnPoint: { x: 0, y: 0.45, z: 0, rotY: 0 },
+    type: 'open_world'
+  },
+  indianapolis: {
+    id: 'indianapolis',
+    name: 'Indianapolis Motor Speedway',
+    subTitle: 'Historic 2.5-Mile Oval, The Yard of Bricks, Pagoda & Pit Lane',
+    icon: '🏁',
+    spawnPoint: { x: 0, y: 0.45, z: -490, rotY: Math.PI / 2 },
+    type: 'race_track'
+  }
+};
+
 export const BIOMES = {
   CITY: { id: 'city', name: 'Metropolis City', color: 0x445566, fogColor: 0x8899aa, friction: 1.0, icon: '🌆' },
   FOREST: { id: 'forest', name: 'Pine Forest', color: 0x2e4e2e, fogColor: 0x5a7a5a, friction: 0.75, icon: '🌲' },

@@ -20,7 +20,8 @@ export class HUD {
       <div class="hud-top-left">
         <button class="pause-square-btn" id="btnPause" title="Pause Game">⏸</button>
         <div class="nav-pills-row">
-          <button class="hud-pill-btn" id="btnGarage">🏁 Garage</button>
+          <button class="hud-pill-btn" id="btnSelectTrack" style="background:linear-gradient(135deg, #eab308, #ca8a04); color:#000; font-weight:bold;">🏁 Tracks</button>
+          <button class="hud-pill-btn" id="btnGarage">🏎️ Garage</button>
           <button class="hud-pill-btn" id="btnMap">🗺️ Map</button>
           <button class="hud-pill-btn" id="btnMissions">📋 Missions</button>
           <button class="hud-pill-btn" id="btnSettings">⚙️ Settings</button>
@@ -85,6 +86,13 @@ export class HUD {
         </div>
       </div>
 
+      <!-- Race Telemetry Box (Indianapolis Speedway) -->
+      <div class="race-telemetry-hud" id="raceTelemetryHud" style="display:none;">
+        <div class="race-stat-box"><span class="race-stat-lbl">🏁 LAP</span> <span class="race-stat-val" id="raceLapNum">1/5</span></div>
+        <div class="race-stat-box"><span class="race-stat-lbl">⏱️ TIME</span> <span class="race-stat-val" id="raceTimeNum">0:00.00</span></div>
+        <div class="race-stat-box"><span class="race-stat-lbl">🏆 BEST</span> <span class="race-stat-val" id="raceBestNum">--:--.--</span></div>
+      </div>
+
       <!-- Drift Score Popup -->
       <div class="drift-score-hud" id="driftScoreHud" style="display:none;">
         <div class="drift-label">🔥 DRIFT</div>
@@ -107,6 +115,7 @@ export class HUD {
       if (btn) btn.addEventListener('click', () => this.callbacks[callbackName] && this.callbacks[callbackName]());
     };
 
+    bindBtn('btnSelectTrack', 'onOpenMapSelector');
     bindBtn('btnGarage', 'onOpenGarage');
     bindBtn('btnMap', 'onOpenMap');
     bindBtn('btnMissions', 'onOpenMissions');
@@ -207,6 +216,31 @@ export class HUD {
           this.hudElement.querySelector('#driftComboNum').innerText = `x${gameplayData.driftCombo}`;
         } else {
           driftHud.style.display = 'none';
+        }
+      }
+
+      // Race Telemetry display (Indianapolis Speedway)
+      const raceHud = this.hudElement.querySelector('#raceTelemetryHud');
+      if (raceHud) {
+        if (gameplayData.isRaceTrack) {
+          raceHud.style.display = 'flex';
+          const lap = gameplayData.currentLap || 1;
+          const total = gameplayData.totalLaps || 5;
+          const curTime = gameplayData.currentLapTime || 0;
+          const bestTime = gameplayData.bestLapTime || 0;
+
+          const fmtTime = (s) => {
+            if (!s || s === 0) return '--:--.--';
+            const m = Math.floor(s / 60);
+            const sec = (s % 60).toFixed(2);
+            return `${m}:${sec.padStart(5, '0')}`;
+          };
+
+          this.hudElement.querySelector('#raceLapNum').innerText = `${lap}/${total}`;
+          this.hudElement.querySelector('#raceTimeNum').innerText = fmtTime(curTime);
+          this.hudElement.querySelector('#raceBestNum').innerText = fmtTime(bestTime);
+        } else {
+          raceHud.style.display = 'none';
         }
       }
     }
@@ -400,3 +434,42 @@ export class HUD {
     ctx.fillText('N', cx, 9);
   }
 }
+
+// Inject Race Telemetry CSS
+const raceStyle = document.createElement('style');
+raceStyle.textContent = `
+  .race-telemetry-hud {
+    position: absolute;
+    top: 75px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(234, 179, 8, 0.4);
+    padding: 8px 18px;
+    border-radius: 24px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    z-index: 100;
+  }
+  .race-stat-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Segoe UI', monospace;
+  }
+  .race-stat-lbl {
+    font-size: 11px;
+    font-weight: bold;
+    color: #eab308;
+    letter-spacing: 0.5px;
+  }
+  .race-stat-val {
+    font-size: 14px;
+    font-weight: bold;
+    color: #ffffff;
+    font-family: monospace;
+  }
+`;
+document.head.appendChild(raceStyle);
