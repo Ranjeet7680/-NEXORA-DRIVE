@@ -120,10 +120,17 @@ export class WeatherManager {
       this.sceneManager.updateSkyForTime(t);
     }
 
-    // 4. Fog density by weather + biome
-    const baseDensity = this.currentPreset.fogDensity || 0.00022;
-    const nightBoost  = isNight ? 0.00008 : 0;
-    this.scene.fog.density = THREE.MathUtils.lerp(this.scene.fog.density, baseDensity + nightBoost, deltaTime);
+    // 4. Fog density/distance by weather + biome
+    if (this.scene.fog) {
+      if (this.scene.fog.isFogExp2) {
+        const baseDensity = this.currentPreset.fogDensity || 0.00022;
+        const nightBoost  = isNight ? 0.00008 : 0;
+        this.scene.fog.density = THREE.MathUtils.lerp(this.scene.fog.density, baseDensity + nightBoost, deltaTime);
+      } else if (this.scene.fog.isFog) {
+        this.scene.fog.near = 750;
+        this.scene.fog.far = 3600;
+      }
+    }
 
     // 5. Stars visible at night
     if (this.starField) {

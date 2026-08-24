@@ -25,6 +25,10 @@ export class CameraManager {
     this.initialized = false;
   }
 
+  reset() {
+    this.initialized = false;
+  }
+
   getCurrentMode() {
     return CAMERA_MODES[this.currentModeIndex];
   }

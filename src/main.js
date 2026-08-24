@@ -112,6 +112,11 @@ class Game {
     this.spawnVehicle(this.saveData.selectedVehicle);
     this.physicsEngine.position.set(0, 0.45, -450);
     this.physicsEngine.rotation.set(0, 0, 0);
+    if (this.currentVehicleMesh) {
+      this.currentVehicleMesh.position.copy(this.physicsEngine.position);
+      this.currentVehicleMesh.rotation.copy(this.physicsEngine.rotation);
+    }
+    this.cameraManager.reset();
 
     // 4. Initialize UI Overlays
     this.initUI();
@@ -503,7 +508,9 @@ class Game {
     }
 
     // ── Water Animation ──
-    this.terrainManager.updateWater(deltaTime);
+    if (this.currentMapId === 'metropolis' && this.terrainManager) {
+      this.terrainManager.updateWater(deltaTime);
+    }
   }
 
   gameLoop(time) {
@@ -527,8 +534,10 @@ class Game {
       inputThrottle: this.physicsEngine.inputThrottle
     });
 
-    // 3. AI Traffic Step
-    this.trafficManager.update(deltaTime, this.physicsEngine.position);
+    // 3. AI Traffic Step (Only active in Metropolis Open World)
+    if (this.currentMapId === 'metropolis' && this.trafficManager) {
+      this.trafficManager.update(deltaTime, this.physicsEngine.position);
+    }
 
     // 4. Weather & Day-Night Step
     this.weatherManager.update(deltaTime, this.physicsEngine.position);
@@ -543,10 +552,11 @@ class Game {
     );
 
     // 6. AI Safety & Guidance Step
+    const activeTraffic = (this.currentMapId === 'metropolis' && this.trafficManager) ? this.trafficManager.trafficVehicles : [];
     this.aiSafetySystem.update(
       this.physicsEngine.speedKmh,
       this.physicsEngine.position,
-      this.trafficManager.trafficVehicles,
+      activeTraffic,
       this.physicsEngine.currentBiome,
       this.physicsEngine.inputThrottle < 0
     );
