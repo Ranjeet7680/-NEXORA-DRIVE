@@ -425,4 +425,179 @@ export class TextureGenerator {
     const texture = new THREE.CanvasTexture(canvas);
     return texture;
   }
+
+  // 8. Authentic BMW Roundel Emblem Texture (Blue & White Quarters + BMW Lettering)
+  static createBmwEmblemTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    const cx = 128, cy = 128, r = 120;
+
+    // Outer Silver Chrome Ring
+    ctx.fillStyle = '#e2e8f0';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Black Inner Ring
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.92, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Chrome Separator Ring
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.60, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Center 4 Quarters: Blue (Top-Left & Bottom-Right) and White (Top-Right & Bottom-Left)
+    const inR = r * 0.58;
+
+    // Top-Left (Blue)
+    ctx.fillStyle = '#0066b1';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, inR, Math.PI, 1.5 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
+
+    // Top-Right (White)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, inR, 1.5 * Math.PI, 2 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
+
+    // Bottom-Right (Blue)
+    ctx.fillStyle = '#0066b1';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, inR, 0, 0.5 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
+
+    // Bottom-Left (White)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, inR, 0.5 * Math.PI, Math.PI);
+    ctx.closePath();
+    ctx.fill();
+
+    // "BMW" Letters arched on black ring
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 28px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('B', cx - 44, cy - 80);
+    ctx.fillText('M', cx, cy - 92);
+    ctx.fillText('W', cx + 44, cy - 80);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  }
+
+  // 9. European License Plate Texture (M DC 4628 E matching Image)
+  static createLicensePlateTexture(plate = 'M DC 4628 E') {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 120;
+    const ctx = canvas.getContext('2d');
+
+    // Plate White Base
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 512, 120);
+
+    // Black Border Frame
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(4, 4, 504, 112);
+
+    // Blue Euro Strip on Left
+    ctx.fillStyle = '#003399';
+    ctx.fillRect(8, 8, 70, 104);
+
+    // Euro Stars Circle
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = '16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('★', 43, 35);
+
+    // Country Code "D" (Germany)
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 36px Arial, sans-serif';
+    ctx.fillText('D', 43, 85);
+
+    // License Plate Number in FE-Schrift Style
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 56px "DIN Alternate", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(plate, 290, 80);
+
+    // Green/Gold Inspection & State Sticker
+    ctx.fillStyle = '#22c55e';
+    ctx.beginPath();
+    ctx.arc(142, 60, 12, 0, Math.PI * 2);
+    ctx.fill();
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  }
+
+  // 10. BMW Iconic Kidney Grille Texture (Dual Kidney Contour with Vertical Chrome Slats & M Emblem)
+  static createBmwKidneyTexture(isRight = false) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    // Gloss Black Base
+    ctx.fillStyle = '#05070a';
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Kidney Outer Ring Contour
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.roundRect(14, 14, 228, 228, 48);
+    ctx.stroke();
+
+    // Subtle Illuminated Contour Glow
+    ctx.strokeStyle = '#93c5fd';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // Vertical Chrome Double-Slats
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 7;
+    const slatCount = 7;
+    for (let i = 1; i <= slatCount; i++) {
+      const sx = 30 + (i / (slatCount + 1)) * 196;
+      ctx.beginPath();
+      ctx.moveTo(sx, 28);
+      ctx.lineTo(sx, 228);
+      ctx.stroke();
+    }
+
+    // Small ///M Badge on top right corner of right kidney
+    if (isRight) {
+      ctx.fillStyle = '#0066b1'; // Light blue
+      ctx.fillRect(170, 40, 6, 22);
+      ctx.fillStyle = '#001a70'; // Dark blue
+      ctx.fillRect(177, 40, 6, 22);
+      ctx.fillStyle = '#dd1122'; // Red
+      ctx.fillRect(184, 40, 6, 22);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px Arial';
+      ctx.fillText('M', 194, 57);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  }
 }

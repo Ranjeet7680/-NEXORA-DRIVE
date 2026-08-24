@@ -24,12 +24,12 @@ export const RADIO_STATIONS = [
 export const VEHICLE_CONFIGS = {
   car: {
     id: 'car',
-    name: 'Apex GT Sport',
-    type: 'Car',
-    icon: '🚗',
+    name: 'BMW i5 / M5 Sport Sedan',
+    type: 'BMW M Sport',
+    icon: '🏎️',
     price: 0,
-    mass: 1400,
-    topSpeed: 210,
+    mass: 1550,
+    topSpeed: 235,
     acceleration: 45,
     braking: 70,
     steeringSpeed: 4.5,
