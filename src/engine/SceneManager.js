@@ -292,6 +292,18 @@ export class SceneManager {
   }
 
   render() {
+    // Always center sky dome and sun disc on camera so they're visible everywhere on the map
+    if (this.skyDome) {
+      this.skyDome.position.copy(this.camera.position);
+    }
+    if (this.sunDisc) {
+      this.sunDisc.position.set(
+        this.camera.position.x + 350,
+        this.camera.position.y + 450,
+        this.camera.position.z + 250
+      );
+      this.sunDisc.lookAt(this.camera.position);
+    }
     this.renderer.render(this.scene, this.camera);
   }
 }

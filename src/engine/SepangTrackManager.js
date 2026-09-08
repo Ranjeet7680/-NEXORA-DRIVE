@@ -117,40 +117,25 @@ export class SepangTrackManager {
     return new THREE.CatmullRomCurve3(rawPoints, true, 'centripetal', 0.25);
   }
 
-  // Tropical Malaysian Green Terrain
+  // Tropical Malaysian Green Terrain (flat, matching physics getHeightAt = 0)
   buildTerrain() {
     const size = 3200;
-    const geo = new THREE.PlaneGeometry(size, size, 100, 100);
-    const pos = geo.attributes.position;
-    const colors = new Float32Array(pos.count * 3);
-
-    const cLushTropics = new THREE.Color(0x1e6622);
-    const cGrass = new THREE.Color(0x2d7a28);
-    const cSoil = new THREE.Color(0x5c4228);
-
-    for (let i = 0; i < pos.count; i++) {
-      const vx = pos.getX(i);
-      const vy = pos.getY(i);
-      const worldX = vx;
-      const worldZ = -vy;
-
-      const hill = Math.sin(worldX * 0.003) * Math.cos(worldZ * 0.003) * 18;
-      pos.setZ(i, hill - 1);
-
-      let c = (hill > 6) ? cLushTropics : (hill < -4 ? cSoil : cGrass);
-      colors[i * 3 + 0] = c.r;
-      colors[i * 3 + 1] = c.g;
-      colors[i * 3 + 2] = c.b;
-    }
-
+    const geo = new THREE.PlaneGeometry(size, size);
     geo.rotateX(-Math.PI / 2);
-    geo.computeVertexNormals();
-    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    const mat = new THREE.MeshBasicMaterial({ vertexColors: true });
+    const mat = new THREE.MeshLambertMaterial({ color: 0x2d7a28 });
     const terrain = new THREE.Mesh(geo, mat);
-    terrain.position.y = -0.15;
+    terrain.position.y = -0.25; // Slightly below road surface so no z-fighting
+    terrain.receiveShadow = true;
     this.trackGroup.add(terrain);
+
+    // Tropical grass strips alongside track
+    const grassMat = new THREE.MeshLambertMaterial({ color: 0x1e6622 });
+    const geoInner = new THREE.PlaneGeometry(size, size);
+    geoInner.rotateX(-Math.PI / 2);
+    const inner = new THREE.Mesh(geoInner, grassMat);
+    inner.position.y = -0.24;
+    this.trackGroup.add(inner);
   }
 
   // 3D Asphalt Track Ribbon with Red & White FIA Kerbs

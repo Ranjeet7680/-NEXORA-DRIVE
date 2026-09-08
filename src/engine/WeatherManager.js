@@ -74,9 +74,12 @@ export class WeatherManager {
   setWeather(presetId) {
     const preset = WEATHER_PRESETS.find(p => p.id === presetId) || WEATHER_PRESETS[0];
     this.currentPreset = preset;
-    this.scene.fog.density = preset.fogDensity;
-    this.rainParticles.visible = preset.rain;
-    this.snowParticles.visible = preset.snow;
+    // Only set density on FogExp2 — our scene uses linear Fog (near/far)
+    if (this.scene.fog && this.scene.fog.isFogExp2) {
+      this.scene.fog.density = preset.fogDensity;
+    }
+    if (this.rainParticles) this.rainParticles.visible = preset.rain;
+    if (this.snowParticles) this.snowParticles.visible = preset.snow;
   }
 
   update(deltaTime, playerPosition) {

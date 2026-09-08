@@ -519,8 +519,12 @@ class Game {
     const deltaTime = Math.min(0.05, (time - this.lastTime) / 1000);
     this.lastTime = time;
 
-    if (this.isPaused) return;
+    if (this.isPaused) {
+      this.sceneManager.render();
+      return;
+    }
 
+    try {
     // 1. Physics Engine Step
     this.physicsEngine.update(deltaTime);
 
@@ -660,6 +664,11 @@ class Game {
 
     // 13. Render 3D Scene
     this.sceneManager.render();
+    } catch (err) {
+      // Never let errors kill the render loop — always render the scene
+      console.warn('[NEXORA] gameLoop error (suppressed):', err);
+      this.sceneManager.render();
+    }
   }
 }
 
