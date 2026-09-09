@@ -116,6 +116,7 @@ class Game {
     if (this.currentVehicleMesh) {
       this.currentVehicleMesh.position.copy(this.physicsEngine.position);
       this.currentVehicleMesh.rotation.copy(this.physicsEngine.rotation);
+      this.currentVehicleMesh.updateMatrixWorld(true);
     }
     this.cameraManager.reset();
 
@@ -373,6 +374,7 @@ class Game {
       if (this.currentVehicleMesh) {
         this.currentVehicleMesh.position.copy(this.physicsEngine.position);
         this.currentVehicleMesh.rotation.copy(this.physicsEngine.rotation);
+        this.currentVehicleMesh.updateMatrixWorld(true);
       }
       this.cameraManager.reset();
 

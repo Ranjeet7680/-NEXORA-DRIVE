@@ -104,6 +104,8 @@ export class CameraManager {
             vPos.z + Math.cos(this.camYaw) * dynamicDist
           );
           this.smoothLookAt.copy(vPos).add(new THREE.Vector3(0, 1.1, 0));
+          this.camera.position.copy(this.smoothPos);
+          this.camera.lookAt(this.smoothLookAt);
           this.initialized = true;
         }
 

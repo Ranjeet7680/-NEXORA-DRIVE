@@ -165,6 +165,8 @@ export class PhysicsEngine {
       this.velocity.setLength(topSpeedMs);
     }
 
+    const currentForwardSpeed = this.velocity.dot(forwardDir);
+
     // 8. Position Integration & Ground Adhesion
     this.position.addScaledVector(this.velocity, deltaTime);
 
@@ -216,7 +218,9 @@ export class PhysicsEngine {
       wheels[0].rotation.y = this.steeringAngle;
       wheels[1].rotation.y = this.steeringAngle;
       wheels.forEach(w => {
-        w.children[0].rotation.x += (currentForwardSpeed * deltaTime) / this.vehicleConfig.wheelRadius;
+        if (w.children && w.children[0]) {
+          w.children[0].rotation.x += (currentForwardSpeed * deltaTime) / this.vehicleConfig.wheelRadius;
+        }
       });
     }
 
