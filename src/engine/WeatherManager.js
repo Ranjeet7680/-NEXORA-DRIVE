@@ -130,8 +130,8 @@ export class WeatherManager {
         const nightBoost  = isNight ? 0.00008 : 0;
         this.scene.fog.density = THREE.MathUtils.lerp(this.scene.fog.density, baseDensity + nightBoost, deltaTime);
       } else if (this.scene.fog.isFog) {
-        this.scene.fog.near = 750;
-        this.scene.fog.far = 3600;
+        this.scene.fog.near = 1500;
+        this.scene.fog.far = 10000;
       }
     }
 

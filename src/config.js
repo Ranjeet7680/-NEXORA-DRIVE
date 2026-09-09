@@ -4,7 +4,7 @@ export const MAP_CONFIGS = {
     name: 'Erangel 8KM Battleground Island',
     subTitle: '8km × 8km Island, Pochinki, Sosnovka Military Base, 2 Sea Bridges, Georgopol & Stalber',
     icon: '🏝️',
-    spawnPoint: { x: -400, y: 0.45, z: 500, rotY: 0 },
+    spawnPoint: { x: -400, y: 6.45, z: 380, rotY: 0 },
     type: 'open_world'
   },
   metropolis: {
@@ -12,7 +12,7 @@ export const MAP_CONFIGS = {
     name: 'Erangel 8KM Battleground Island',
     subTitle: '8km × 8km Island, Pochinki, Sosnovka Military Base, 2 Sea Bridges, Georgopol & Stalber',
     icon: '🏝️',
-    spawnPoint: { x: -400, y: 0.45, z: 500, rotY: 0 },
+    spawnPoint: { x: -400, y: 6.45, z: 380, rotY: 0 },
     type: 'open_world'
   },
   sepang: {

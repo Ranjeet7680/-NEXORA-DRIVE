@@ -48,8 +48,8 @@ export class SceneManager {
     this.fillLight.position.set(-300, 250, -250);
     this.scene.add(this.fillLight);
 
-    // Linear fog — crystal clear near player, soft haze at distant 7.5km horizon
-    this.scene.fog = new THREE.Fog(0x8bb8e8, 1200, 7500);
+    // Linear fog — crystal clear near player, soft haze at distant 10km horizon
+    this.scene.fog = new THREE.Fog(0x8bb8e8, 1500, 10000);
 
     // Cloud system
     this.clouds = [];
@@ -98,41 +98,49 @@ export class SceneManager {
     const birdMat = new THREE.MeshBasicMaterial({ color: 0x1e293b, side: THREE.DoubleSide });
     for (let i = 0; i < 16; i++) {
       const birdGroup = new THREE.Group();
-      
-      const wingGeo = new THREE.PlaneGeometry(2.5, 0.9);
-      const wingL = new THREE.Mesh(wingGeo, birdMat);
-      const wingR = new THREE.Mesh(wingGeo, birdMat);
-      wingL.position.x = -1.25;
-      wingR.position.x = 1.25;
-      wingL.rotation.z = 0.25;
-      wingR.rotation.z = -0.25;
+      const bScale = 0.6 + Math.random() * 0.5;
 
+      const body = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.4, 4).rotateX(Math.PI / 2), birdMat);
+      birdGroup.add(body);
+
+      const wingL = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.6).rotateX(-Math.PI / 2), birdMat);
+      wingL.position.set(-0.8, 0.1, 0);
       birdGroup.add(wingL);
+
+      const wingR = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.6).rotateX(-Math.PI / 2), birdMat);
+      wingR.position.set(0.8, 0.1, 0);
       birdGroup.add(wingR);
 
-      const bx = -400 + Math.random() * 800;
-      const bz = -400 + Math.random() * 800;
-      const by = 90 + Math.random() * 100;
-      birdGroup.position.set(bx, by, bz);
+      birdGroup.scale.set(bScale, bScale, bScale);
+      birdGroup.position.set(
+        (Math.random() - 0.5) * 800,
+        90 + Math.random() * 80,
+        (Math.random() - 0.5) * 800
+      );
+
+      const heading = Math.random() * Math.PI * 2;
       birdGroup.userData = {
-        speed: 12 + Math.random() * 10,
-        wingTime: Math.random() * Math.PI * 2,
-        wingL,
-        wingR,
-        dir: new THREE.Vector3((Math.random() - 0.5), 0, (Math.random() - 0.5)).normalize()
+        speed: 14 + Math.random() * 8,
+        dir: new THREE.Vector3(Math.sin(heading), 0, Math.cos(heading)),
+        wingL: wingL,
+        wingR: wingR,
+        wingTime: Math.random() * 10
       };
+      birdGroup.lookAt(birdGroup.position.clone().add(birdGroup.userData.dir));
+
       this.scene.add(birdGroup);
       this.birds.push(birdGroup);
     }
   }
 
   _createGradientSky() {
-    const skyGeo = new THREE.SphereGeometry(2800, 32, 16);
+    const skyRadius = 9000;
+    const skyGeo = new THREE.SphereGeometry(skyRadius, 32, 16);
     const skyColors = new Float32Array(skyGeo.attributes.position.count * 3);
     const pos = skyGeo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
       const y = pos.getY(i);
-      const norm = (y + 2800) / 5600;  // 0 at bottom, 1 at top
+      const norm = (y + skyRadius) / (skyRadius * 2);  // 0 at bottom, 1 at top
       // Deep royal blue at zenith → clear cerulean mid-sky → bright horizon
       const zenith   = new THREE.Color(0x0d3a7a);  // Deep royal blue
       const midSky   = new THREE.Color(0x1a6fc4);  // Clear blue sky
@@ -140,8 +148,8 @@ export class SceneManager {
       let c;
       if (norm > 0.62) {
         c = zenith.clone().lerp(midSky, (1.0 - norm) / 0.38);
-      } else if (norm > 0.45) {
-        c = midSky.clone().lerp(horizon, (0.62 - norm) / 0.17);
+      } else if (norm > 0.48) {
+        c = midSky.clone().lerp(horizon, (0.62 - norm) / 0.14);
       } else {
         c = horizon.clone();
       }
@@ -150,8 +158,9 @@ export class SceneManager {
       skyColors[i * 3 + 2] = c.b;
     }
     skyGeo.setAttribute('color', new THREE.BufferAttribute(skyColors, 3));
-    const skyMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide });
+    const skyMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, depthWrite: false });
     this.skyDome = new THREE.Mesh(skyGeo, skyMat);
+    this.skyDome.renderOrder = -100;
     this.scene.add(this.skyDome);
   }
 

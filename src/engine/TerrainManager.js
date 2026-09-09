@@ -3,7 +3,8 @@ import { BIOMES } from '../config.js';
 import { TextureGenerator } from './TextureGenerator.js';
 
 /**
- * 8KM X 8KM ERANGEL BATTLEGROUND ISLAND - COMPLETE MASTER VERSION
+ * 8KM X 8KM ERANGEL BATTLEGROUND ISLAND - ENHANCED MASTER VERSION
+ * - Island Land Baseline at Y = +6.0m (Well above sea level Y = 0.0m)
  * - True 8000m x 8000m Island World
  * - Full Sosnovka Military Airport: Control Tower, C-130 Hercules Transport, Fighter Jets, Runway Lights, Windsock
  * - Rich 3D Grass Tufts & Wildflower Clusters (Poppies, Dandelions, Cornflowers)
@@ -26,7 +27,7 @@ export class TerrainManager {
     this.runwayLights = [];
     this.waterTime = 0;
 
-    // Obstacle Colliders
+    // Physical Obstacle Colliders
     this.colliders = [];
     this.gridCellSize = 100;
     this.grid = new Map();
@@ -67,57 +68,71 @@ export class TerrainManager {
   // 1. ELEVATION & TOPOGRAPHY FOR 8KM ERANGEL ISLAND
   // ═══════════════════════════════════════════════════════════════════════════
   getHeightAt(x, z) {
-    // 1. Suspension Bridges
+    // 1. Suspension Bridges Check (West Bridge x: -800, East Bridge x: 1500)
     if (z >= 1100 && z <= 1900) {
-      if (Math.abs(x - (-800)) < 16) return 9.0; // West Bridge Deck
-      if (Math.abs(x - 1500) < 16) return 9.0;  // East Bridge Deck
-      return -8.0; // Sea channel
+      if (Math.abs(x - (-800)) < 16) return 14.0; // West Bridge Deck
+      if (Math.abs(x - 1500) < 16) return 14.0;  // East Bridge Deck
+      // Sea channel between Mainland and Sosnovka Island (Below Sea Level)
+      return -8.0;
     }
 
-    // 2. Surrounding Ocean
+    // 2. Surrounding Ocean Outer Boundaries (Beyond 3600m radius)
     const distFromCenter = Math.sqrt(x * x + z * z);
-    if (distFromCenter > 3800) return -12.0;
+    if (distFromCenter > 3800) {
+      return -12.0; // Deep outer ocean
+    }
+    if (distFromCenter > 3400) {
+      // Coastal slope into ocean
+      const t = (distFromCenter - 3400) / 400;
+      return 6.0 * (1 - t) - 12.0 * t;
+    }
 
-    // 3. Georgopol River Inlet
-    if (x >= -3600 && x <= -1800 && z >= -1850 && z <= -1450) return -5.0;
+    // 3. Georgopol River Inlet Channel
+    if (x >= -3600 && x <= -1800 && z >= -1850 && z <= -1450) {
+      return -5.0; // Georgopol water inlet
+    }
 
-    // 4. Stalber Mountain Peak (NE)
+    // 4. Stalber Mountain Peak (NE: x ~ 1800 to 3000, z ~ -3200 to -1900)
     if (x > 1400 && z < -1600 && x < 3300 && z > -3500) {
       const dx = (x - 2300) / 700;
       const dz = (z - (-2600)) / 700;
       const distSq = dx * dx + dz * dz;
       if (distSq < 2.5) {
         const peak = Math.max(0, (1 - distSq * 0.4)) * 75;
-        const rugged = Math.sin(x * 0.02) * Math.cos(z * 0.02) * 12;
-        return Math.max(0.45, peak + rugged);
+        const rugged = Math.sin(x * 0.02) * Math.cos(z * 0.02) * 10;
+        return 6.0 + peak + rugged;
       }
     }
 
-    // 5. Sosnovka Military Island Central Hill
+    // 5. Sosnovka Military Island Central Hill (South: x ~ -300 to 400, z ~ 2400 to 3200)
     if (z > 1900 && z < 3700) {
-      // Airport Runway is perfectly flat at y = 0.5
-      if (Math.abs(x) < 40 && z > 2200 && z < 3400) return 0.5;
-
+      // Airport Runway is flat at Y = 6.0m
+      if (Math.abs(x) < 45 && z > 2100 && z < 3500) {
+        return 6.0;
+      }
       const dx = (x - 0) / 700;
       const dz = (z - 2800) / 600;
       const distSq = dx * dx + dz * dz;
       if (distSq < 2.0) {
-        return Math.max(0.45, (1 - distSq * 0.5) * 42);
+        return 6.0 + Math.max(0, (1 - distSq * 0.5)) * 38;
       }
-      return 0.45;
+      return 6.0;
     }
 
-    // 6. Rozhok / School Hill
+    // 6. Rozhok / School Hill (Center: x ~ 100 to 700, z ~ -700 to -100)
     if (x > 0 && x < 800 && z > -800 && z < 0) {
       const dx = (x - 400) / 350;
       const dz = (z - (-400)) / 300;
       const distSq = dx * dx + dz * dz;
-      if (distSq < 1.8) return Math.max(0.45, (1 - distSq * 0.5) * 22);
+      if (distSq < 1.8) {
+        return 6.0 + Math.max(0, (1 - distSq * 0.5)) * 20;
+      }
     }
 
-    // 7. General Farmlands & Rolling Meadows
-    const gentleHills = Math.sin(x * 0.003) * Math.cos(z * 0.003) * 4.5;
-    return Math.max(0.45, 0.45 + gentleHills);
+    // 7. General Farmlands & Rolling Valleys (Pochinki, Gatka, Farm)
+    // BASELINE ELEVATION = 6.0m (Always well above sea level 0.0m!)
+    const gentleHills = Math.sin(x * 0.003) * Math.cos(z * 0.003) * 3.5;
+    return 6.0 + Math.max(0, gentleHills);
   }
 
   getBiomeAt(x, z) {
@@ -140,13 +155,13 @@ export class TerrainManager {
     const pos = geo.attributes.position;
     const colors = new Float32Array(pos.count * 3);
 
-    const cGrass = new THREE.Color(0x38761d);
-    const cDeepForest = new THREE.Color(0x1f5119);
-    const cFarmland = new THREE.Color(0x8a9a40);
-    const cRock = new THREE.Color(0x625d56);
-    const cSnowRock = new THREE.Color(0x8a847c);
-    const cSand = new THREE.Color(0xd4b272);
-    const cWaterbed = new THREE.Color(0x1a3848);
+    const cGrass = new THREE.Color(0x387d22);      // Vivid rich grass green
+    const cDeepForest = new THREE.Color(0x1e4f16); // Coniferous pine understory
+    const cFarmland = new THREE.Color(0x918838);   // Golden wheat fields
+    const cRock = new THREE.Color(0x605b54);       // Mountain granite
+    const cSnowRock = new THREE.Color(0x8c867e);   // High peaks
+    const cSand = new THREE.Color(0xd4b574);       // Beach sand
+    const cWaterbed = new THREE.Color(0x132b3f);   // Submerged sea floor
 
     for (let i = 0; i < pos.count; i++) {
       const vx = pos.getX(i);
@@ -158,14 +173,14 @@ export class TerrainManager {
       pos.setZ(i, height);
 
       let c;
-      if (height < 0) {
-        c = (height < -4) ? cWaterbed : cSand;
-      } else if (height < 2.0) {
-        c = (Math.sin(worldX * 0.05 + worldZ * 0.05) > 0.3) ? cSand : cGrass;
+      if (height < 1.0) {
+        c = (height < -3) ? cWaterbed : cSand;
+      } else if (height < 5.0) {
+        c = cSand; // Coastal sand belt
       } else if (height > 40) {
         c = (height > 65) ? cSnowRock : cRock;
       } else if (worldX > -1600 && worldX < 600 && worldZ > 0 && worldZ < 1000) {
-        c = cFarmland;
+        c = cFarmland; // Pochinki & Gatka wheat fields
       } else if (worldZ < -1000 && Math.abs(worldX) < 1200) {
         c = cDeepForest;
       } else {
@@ -181,22 +196,28 @@ export class TerrainManager {
     geo.computeVertexNormals();
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+    // Non-metallic, non-reflective material with high roughness for realistic earth/grass
+    const mat = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.90,
+      metalness: 0.02
+    });
     this.terrainMesh = new THREE.Mesh(geo, mat);
     this.terrainMesh.receiveShadow = true;
     this.scene.add(this.terrainMesh);
   }
 
   createOceanWater() {
-    const waterGeo = new THREE.PlaneGeometry(9600, 9600, 32, 32);
+    // Water sits at Y = 0.0m, while the island land is at Y = +6.0m!
+    const waterGeo = new THREE.PlaneGeometry(9600, 9600, 16, 16);
     waterGeo.rotateX(-Math.PI / 2);
 
     const waterMat = new THREE.MeshStandardMaterial({
-      color: 0x0066aa,
-      roughness: 0.08,
-      metalness: 0.88,
+      color: 0x005588,
+      roughness: 0.25,
+      metalness: 0.35,
       transparent: true,
-      opacity: 0.84
+      opacity: 0.78
     });
 
     this.oceanMesh = new THREE.Mesh(waterGeo, waterMat);
@@ -206,7 +227,7 @@ export class TerrainManager {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 3. TWO SUSPENSION BRIDGES
+  // 3. TWO SUSPENSION BRIDGES (WEST & EAST BRIDGES)
   // ═══════════════════════════════════════════════════════════════════════════
   createTwoSuspensionBridges() {
     const bridgeLocations = [
@@ -226,49 +247,50 @@ export class TerrainManager {
       const midZ = (b.zStart + b.zEnd) / 2;
       const width = 24;
 
+      // Asphalt Deck (Elevation Y = 13.0m)
       const deck = new THREE.Mesh(new THREE.BoxGeometry(width, 2.5, length), deckMat);
-      deck.position.set(b.x, 8.0, midZ);
+      deck.position.set(b.x, 13.0, midZ);
       deck.receiveShadow = true;
       this.scene.add(deck);
 
-      const yLine = new THREE.Mesh(new THREE.PlaneGeometry(1.2, length), lineMat);
-      yLine.rotateX(-Math.PI / 2);
-      yLine.position.set(b.x, 9.3, midZ);
+      // Yellow Center Line
+      const yLine = new THREE.Mesh(new THREE.PlaneGeometry(1.2, length).rotateX(-Math.PI / 2), lineMat);
+      yLine.position.set(b.x, 14.3, midZ);
       this.scene.add(yLine);
 
-      // Piers
+      // Concrete Underwater Piers
       [-220, 0, 220].forEach(oz => {
-        const pier = new THREE.Mesh(new THREE.BoxGeometry(width + 6, 22, 18), concreteMat);
-        pier.position.set(b.x, -2, midZ + oz);
+        const pier = new THREE.Mesh(new THREE.BoxGeometry(width + 6, 26, 18), concreteMat);
+        pier.position.set(b.x, 2.0, midZ + oz);
         this.scene.add(pier);
       });
 
-      // Towers
+      // Towers (48m High)
       [-180, 180].forEach(oz => {
         const towerZ = midZ + oz;
         [-width / 2 - 2, width / 2 + 2].forEach(ox => {
-          const col = new THREE.Mesh(new THREE.BoxGeometry(3.5, 48, 3.5), steelMat);
-          col.position.set(b.x + ox, 28, towerZ);
+          const col = new THREE.Mesh(new THREE.BoxGeometry(3.5, 52, 3.5), steelMat);
+          col.position.set(b.x + ox, 32, towerZ);
           this.scene.add(col);
         });
 
         const cross = new THREE.Mesh(new THREE.BoxGeometry(width + 8, 4, 3.5), steelMat);
-        cross.position.set(b.x, 48, towerZ);
+        cross.position.set(b.x, 52, towerZ);
         this.scene.add(cross);
 
         const beacon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0033 }));
-        beacon.position.set(b.x, 51, towerZ);
+        beacon.position.set(b.x, 55, towerZ);
         this.scene.add(beacon);
       });
 
-      // Cables
+      // Suspension Cables
       [-width / 2 - 2, width / 2 + 2].forEach(ox => {
         const curve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(b.x + ox, 9.5, b.zStart),
-          new THREE.Vector3(b.x + ox, 48, midZ - 180),
-          new THREE.Vector3(b.x + ox, 14, midZ),
-          new THREE.Vector3(b.x + ox, 48, midZ + 180),
-          new THREE.Vector3(b.x + ox, 9.5, b.zEnd),
+          new THREE.Vector3(b.x + ox, 14.5, b.zStart),
+          new THREE.Vector3(b.x + ox, 52, midZ - 180),
+          new THREE.Vector3(b.x + ox, 18, midZ),
+          new THREE.Vector3(b.x + ox, 52, midZ + 180),
+          new THREE.Vector3(b.x + ox, 14.5, b.zEnd),
         ]);
         const cableMesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.45, 8, false), cableMat);
         this.scene.add(cableMesh);
@@ -277,7 +299,7 @@ export class TerrainManager {
       // Guardrails
       [-width / 2 + 0.8, width / 2 - 0.8].forEach(ox => {
         const rail = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, length), barrierMat);
-        rail.position.set(b.x + ox, 10.1, midZ);
+        rail.position.set(b.x + ox, 15.1, midZ);
         this.scene.add(rail);
 
         this.colliders.push({
@@ -286,7 +308,7 @@ export class TerrainManager {
           maxX: b.x + ox + 1.2,
           minZ: b.zStart,
           maxZ: b.zEnd,
-          height: 15
+          height: 18
         });
       });
     });
@@ -303,33 +325,111 @@ export class TerrainManager {
     const buildRoadStrip = (x1, z1, x2, z2, width = 24) => {
       const dx = x2 - x1;
       const dz = z2 - z1;
-      const length = Math.sqrt(dx * dx + dz * dz);
-      const angle = Math.atan2(dx, dz);
-      const midX = (x1 + x2) / 2;
-      const midZ = (z1 + z2) / 2;
+      const totalLen = Math.sqrt(dx * dx + dz * dz);
+      if (totalLen < 1) return;
 
-      const roadMesh = new THREE.Mesh(new THREE.PlaneGeometry(width, length).rotateX(-Math.PI / 2), roadMat);
-      roadMesh.position.set(midX, 0.52, midZ);
-      roadMesh.rotation.y = angle;
+      const segLen = 40;
+      const numSegs = Math.max(1, Math.ceil(totalLen / segLen));
+      const nx = -dz / totalLen;
+      const nz = dx / totalLen;
+      const halfW = width * 0.5;
+
+      const roadVerts = [];
+      const roadIndices = [];
+      const roadUvs = [];
+
+      const yVerts = [];
+      const yIndices = [];
+      const yHalfW = 0.6;
+
+      const wVerts = [];
+      const wIndices = [];
+      const wHalfW = 0.4;
+      const edgeOffset = halfW - 1.5;
+
+      for (let i = 0; i <= numSegs; i++) {
+        const t = i / numSegs;
+        const cx = x1 + dx * t;
+        const cz = z1 + dz * t;
+
+        const lx = cx + nx * halfW;
+        const lz = cz + nz * halfW;
+        const rx = cx - nx * halfW;
+        const rz = cz - nz * halfW;
+        const ly = this.getHeightAt(lx, lz) + 0.12;
+        const ry = this.getHeightAt(rx, rz) + 0.12;
+        const midY = (ly + ry) * 0.5;
+
+        roadVerts.push(lx, ly, lz, rx, ry, rz);
+        roadUvs.push(0, t * (totalLen / 12), 1, t * (totalLen / 12));
+
+        if (i < numSegs) {
+          const base = i * 2;
+          roadIndices.push(base, base + 1, base + 2);
+          roadIndices.push(base + 1, base + 3, base + 2);
+        }
+
+        const ylx = cx + nx * yHalfW;
+        const ylz = cz + nz * yHalfW;
+        const yrx = cx - nx * yHalfW;
+        const yrz = cz - nz * yHalfW;
+        yVerts.push(ylx, midY + 0.04, ylz, yrx, midY + 0.04, yrz);
+        if (i < numSegs) {
+          const b = i * 2;
+          yIndices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+        }
+
+        const leftMidX = cx + nx * edgeOffset;
+        const leftMidZ = cz + nz * edgeOffset;
+        const rightMidX = cx - nx * edgeOffset;
+        const rightMidZ = cz - nz * edgeOffset;
+
+        const w1lx = leftMidX + nx * wHalfW;
+        const w1lz = leftMidZ + nz * wHalfW;
+        const w1rx = leftMidX - nx * wHalfW;
+        const w1rz = leftMidZ - nz * wHalfW;
+
+        const w2lx = rightMidX + nx * wHalfW;
+        const w2lz = rightMidZ + nz * wHalfW;
+        const w2rx = rightMidX - nx * wHalfW;
+        const w2rz = rightMidZ - nz * wHalfW;
+
+        const wIdxBase = i * 4;
+        wVerts.push(w1lx, ly + 0.04, w1lz, w1rx, ly + 0.04, w1rz);
+        wVerts.push(w2lx, ry + 0.04, w2lz, w2rx, ry + 0.04, w2rz);
+
+        if (i < numSegs) {
+          wIndices.push(wIdxBase, wIdxBase + 1, wIdxBase + 4);
+          wIndices.push(wIdxBase + 1, wIdxBase + 5, wIdxBase + 4);
+          wIndices.push(wIdxBase + 2, wIdxBase + 3, wIdxBase + 6);
+          wIndices.push(wIdxBase + 3, wIdxBase + 7, wIdxBase + 6);
+        }
+      }
+
+      const roadGeo = new THREE.BufferGeometry();
+      roadGeo.setAttribute('position', new THREE.Float32BufferAttribute(roadVerts, 3));
+      roadGeo.setAttribute('uv', new THREE.Float32BufferAttribute(roadUvs, 2));
+      roadGeo.setIndex(roadIndices);
+      roadGeo.computeVertexNormals();
+
+      const roadMesh = new THREE.Mesh(roadGeo, roadMat);
       roadMesh.receiveShadow = true;
       this.scene.add(roadMesh);
       this.roadMeshes.push(roadMesh);
 
-      // Yellow Center Line
-      const yLine = new THREE.Mesh(new THREE.PlaneGeometry(1.2, length).rotateX(-Math.PI / 2), yellowMat);
-      yLine.position.set(midX, 0.56, midZ);
-      yLine.rotation.y = angle;
+      const yGeo = new THREE.BufferGeometry();
+      yGeo.setAttribute('position', new THREE.Float32BufferAttribute(yVerts, 3));
+      yGeo.setIndex(yIndices);
+      yGeo.computeVertexNormals();
+      const yLine = new THREE.Mesh(yGeo, yellowMat);
       this.scene.add(yLine);
 
-      // White Edge Lines
-      [-width / 2 + 1.5, width / 2 - 1.5].forEach(ox => {
-        const wLine = new THREE.Mesh(new THREE.PlaneGeometry(0.8, length).rotateX(-Math.PI / 2), whiteMat);
-        const worldOx = ox * Math.cos(angle);
-        const worldOz = -ox * Math.sin(angle);
-        wLine.position.set(midX + worldOx, 0.56, midZ + worldOz);
-        wLine.rotation.y = angle;
-        this.scene.add(wLine);
-      });
+      const wGeo = new THREE.BufferGeometry();
+      wGeo.setAttribute('position', new THREE.Float32BufferAttribute(wVerts, 3));
+      wGeo.setIndex(wIndices);
+      wGeo.computeVertexNormals();
+      const wLine = new THREE.Mesh(wGeo, whiteMat);
+      this.scene.add(wLine);
     };
 
     // Coastal Highway
@@ -396,9 +496,9 @@ export class TerrainManager {
       const rz = (Math.random() - 0.5) * 7200;
       const ry = this.getHeightAt(rx, rz);
 
-      if (ry < 0.5) continue;
+      if (ry < 4.5) continue; // Don't place trees in water or beaches
       if (Math.abs(rx - (-400)) < 180 && Math.abs(rz - 500) < 180) continue;
-      if (Math.abs(rx) < 250 && Math.abs(rz - 2800) < 350) continue; // Keep airport runway clear!
+      if (Math.abs(rx) < 250 && Math.abs(rz - 2800) < 350) continue; // Clear runway
 
       const treeGroup = new THREE.Group();
       const treeType = i % 3;
@@ -445,7 +545,9 @@ export class TerrainManager {
       const bx = (Math.random() - 0.5) * 6800;
       const bz = (Math.random() - 0.5) * 6800;
       const by = this.getHeightAt(bx, bz);
-      if (by < 0.5) continue;
+      if (by < 4.5) continue;
+      if (Math.abs(bx - (-400)) < 180 && Math.abs(bz - 500) < 180) continue;
+      if (Math.abs(bx) < 250 && Math.abs(bz - 2800) < 350) continue;
 
       const bush = new THREE.Mesh(bushGeo, bushMat);
       bush.position.set(bx, by + 1.2, bz);
@@ -454,7 +556,7 @@ export class TerrainManager {
       this.scene.add(bush);
     }
 
-    // Hay Bales
+    // Hay Bales in farmlands
     const hayGeo = new THREE.CylinderGeometry(2.2, 2.2, 3.6, 12).rotateZ(Math.PI / 2);
     for (let i = 0; i < 80; i++) {
       const hx = -1600 + Math.random() * 1400;
@@ -481,7 +583,6 @@ export class TerrainManager {
     const flowerYellowMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.5 });
     const flowerBlueMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.5 });
 
-    // Crossed-quad grass tuft geometry
     const bladeGeo = new THREE.PlaneGeometry(1.8, 1.4);
     bladeGeo.translate(0, 0.7, 0);
 
@@ -489,7 +590,9 @@ export class TerrainManager {
       const gx = (Math.random() - 0.5) * 6400;
       const gz = (Math.random() - 0.5) * 6400;
       const gy = this.getHeightAt(gx, gz);
-      if (gy < 0.5 || gy > 35) continue;
+      if (gy < 5.0 || gy > 35) continue;
+      if (Math.abs(gx - (-400)) < 180 && Math.abs(gz - 500) < 180) continue;
+      if (Math.abs(gx) < 250 && Math.abs(gz - 2800) < 350) continue;
 
       const grassGroup = new THREE.Group();
       const m1 = new THREE.Mesh(bladeGeo, (i % 2 === 0) ? grassMat1 : grassMat2);
@@ -498,7 +601,6 @@ export class TerrainManager {
       grassGroup.add(m1);
       grassGroup.add(m2);
 
-      // 35% chance to have flower blooms in the tuft!
       if (Math.random() < 0.35) {
         const flowerColor = [flowerRedMat, flowerYellowMat, flowerBlueMat][i % 3];
         const flowerPetal = new THREE.Mesh(new THREE.SphereGeometry(0.35, 6, 6), flowerColor);
@@ -515,62 +617,60 @@ export class TerrainManager {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 7. COMPLETE SOSNOVKA AIRPORT (CONTROL TOWER, C-130 HERCULES, JETS, RUNWAY)
+  // 7. COMPLETE SOSNOVKA AIRPORT
   // ═══════════════════════════════════════════════════════════════════════════
   createCompleteAirport() {
     const ax = 0;
     const az = 2800;
+    const ay = this.getHeightAt(ax, az); // 6.0m
     const concreteMat = new THREE.MeshStandardMaterial({ color: 0x828a99, roughness: 0.8 });
     const darkAsphaltMat = new THREE.MeshStandardMaterial({ color: 0x22262c, roughness: 0.9 });
     const camoPlaneMat = new THREE.MeshStandardMaterial({ color: 0x54606e, roughness: 0.4, metalness: 0.75 });
     const jetMat = new THREE.MeshStandardMaterial({ color: 0x3b4252, roughness: 0.35, metalness: 0.85 });
     const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x88ccff, transparent: true, opacity: 0.4, roughness: 0.1 });
-    const yellowMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
     const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-    // ── A. Main Runway Strip (1400m x 55m) ──
+    // Main Runway Strip
     const runwayGeo = new THREE.PlaneGeometry(55, 1400).rotateX(-Math.PI / 2);
     const runway = new THREE.Mesh(runwayGeo, darkAsphaltMat);
-    runway.position.set(ax, 0.52, az);
+    runway.position.set(ax, ay + 0.05, az);
     runway.receiveShadow = true;
     this.scene.add(runway);
 
     // Centerline Dashes
     for (let z = az - 600; z <= az + 600; z += 40) {
       const dash = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 20).rotateX(-Math.PI / 2), whiteMat);
-      dash.position.set(ax, 0.55, z);
+      dash.position.set(ax, ay + 0.08, z);
       this.scene.add(dash);
     }
 
-    // Runway Piano-Key Threshold Markings (16 white blocks each end)
+    // Threshold Markings
     [-650, 650].forEach(endZ => {
       for (let k = -7; k <= 7; k++) {
         const key = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 32).rotateX(-Math.PI / 2), whiteMat);
-        key.position.set(ax + k * 3.2, 0.55, az + endZ);
+        key.position.set(ax + k * 3.2, ay + 0.08, az + endZ);
         this.scene.add(key);
       }
     });
 
-    // Runway Edge Lights (Green threshold, white sides, red departure)
+    // Runway Edge Lights
     for (let z = az - 680; z <= az + 680; z += 50) {
       [-27, 27].forEach(ox => {
         const isThreshold = Math.abs(z - (az - 680)) < 40 || Math.abs(z - (az + 680)) < 40;
         const lightColor = isThreshold ? 0x22c55e : 0xffffff;
         const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.8, 8), new THREE.MeshBasicMaterial({ color: lightColor }));
-        lamp.position.set(ax + ox, 0.8, z);
+        lamp.position.set(ax + ox, ay + 0.4, z);
         this.scene.add(lamp);
         this.runwayLights.push(lamp);
       });
     }
 
-    // ── B. Air Traffic Control Tower (32m high) ──
+    // Air Traffic Control Tower (32m High)
     const towerGroup = new THREE.Group();
-    // Concrete Tower Column
     const col = new THREE.Mesh(new THREE.CylinderGeometry(4.5, 6.0, 26, 12), concreteMat);
     col.position.y = 13;
     towerGroup.add(col);
 
-    // Octagonal Observation Cab
     const cabBase = new THREE.Mesh(new THREE.CylinderGeometry(9.0, 4.5, 3.5, 8), concreteMat);
     cabBase.position.y = 27.5;
     towerGroup.add(cabBase);
@@ -583,49 +683,40 @@ export class TerrainManager {
     cabRoof.position.y = 35.0;
     towerGroup.add(cabRoof);
 
-    // Flashing Red Aviation Beacon
     const beacon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0022 }));
     beacon.position.y = 37.0;
     towerGroup.add(beacon);
 
-    towerGroup.position.set(ax + 90, 0.5, az - 120);
+    towerGroup.position.set(ax + 90, ay, az - 120);
     towerGroup.castShadow = true;
     this.scene.add(towerGroup);
 
     this.colliders.push({ type: 'circle', x: ax + 90, z: az - 120, radius: 7.0, height: 38 });
 
-    // ── C. C-130 Hercules Military Heavy Transport Plane (Parked on Apron) ──
+    // C-130 Hercules Transport Plane
     const hercules = new THREE.Group();
-    // Fuselage
-    const fuseGeo = new THREE.CylinderGeometry(4.2, 4.2, 45, 16);
-    fuseGeo.rotateX(Math.PI / 2);
-    const fuse = new THREE.Mesh(fuseGeo, camoPlaneMat);
+    const fuse = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 45, 16).rotateX(Math.PI / 2), camoPlaneMat);
     fuse.position.y = 6.5;
     hercules.add(fuse);
 
-    // Cockpit Nose Cone
     const nose = new THREE.Mesh(new THREE.ConeGeometry(4.2, 10, 16).rotateX(-Math.PI / 2), camoPlaneMat);
     nose.position.set(0, 6.5, 27.5);
     hercules.add(nose);
 
-    // Wings (48m Wingspan)
     const wings = new THREE.Mesh(new THREE.BoxGeometry(48, 0.9, 8), camoPlaneMat);
     wings.position.set(0, 8.8, 5);
     hercules.add(wings);
 
-    // 4 Turboprop Engine Nacelles
     [-18, -9, 9, 18].forEach(ex => {
       const nacelle = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 6.5, 10).rotateX(Math.PI / 2), camoPlaneMat);
       nacelle.position.set(ex, 8.2, 7.5);
       hercules.add(nacelle);
 
-      // Propeller Spinner
       const spinner = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2.0, 8).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x222222 }));
       spinner.position.set(ex, 8.2, 11);
       hercules.add(spinner);
     });
 
-    // T-Tail Vertical Stabilizer
     const vTail = new THREE.Mesh(new THREE.BoxGeometry(1.0, 11, 7), camoPlaneMat);
     vTail.position.set(0, 13.5, -20);
     hercules.add(vTail);
@@ -634,27 +725,24 @@ export class TerrainManager {
     hTail.position.set(0, 18.5, -21);
     hercules.add(hTail);
 
-    hercules.position.set(ax - 100, 0.5, az + 80);
+    hercules.position.set(ax - 100, ay, az + 80);
     hercules.rotation.y = Math.PI / 3;
     hercules.castShadow = true;
     this.scene.add(hercules);
 
     this.colliders.push({ type: 'box', minX: ax - 130, maxX: ax - 70, minZ: az + 55, maxZ: az + 105, height: 18 });
 
-    // ── D. Two Tactical Fighter Jets (Parked in Blast Revetments) ──
-    [-60, 60].forEach((oz, jIdx) => {
+    // Two Fighter Jets
+    [-60, 60].forEach((oz) => {
       const jet = new THREE.Group();
-      // Fuselage
       const jetBody = new THREE.Mesh(new THREE.ConeGeometry(1.6, 18, 12).rotateX(-Math.PI / 2), jetMat);
       jetBody.position.y = 2.4;
       jet.add(jetBody);
 
-      // Delta Wings
       const jWings = new THREE.Mesh(new THREE.BoxGeometry(13, 0.3, 7), jetMat);
       jWings.position.set(0, 2.4, -2);
       jet.add(jWings);
 
-      // Twin Tailfins
       [-1.8, 1.8].forEach(tx => {
         const fin = new THREE.Mesh(new THREE.BoxGeometry(0.25, 4.0, 3.5), jetMat);
         fin.position.set(tx, 4.2, -7);
@@ -662,12 +750,11 @@ export class TerrainManager {
         jet.add(fin);
       });
 
-      // Canopy
       const canopy = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 8).scale(0.8, 1.0, 3.0), glassMat);
       canopy.position.set(0, 3.4, 2.0);
       jet.add(canopy);
 
-      jet.position.set(ax - 90, 0.5, az - 180 + oz);
+      jet.position.set(ax - 90, ay, az - 180 + oz);
       jet.rotation.y = Math.PI / 2;
       jet.castShadow = true;
       this.scene.add(jet);
@@ -675,7 +762,7 @@ export class TerrainManager {
       this.colliders.push({ type: 'circle', x: ax - 90, z: az - 180 + oz, radius: 7, height: 6 });
     });
 
-    // ── E. Airport Windsock ──
+    // Windsock
     const sockGroup = new THREE.Group();
     const sockPole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 10, 8), new THREE.MeshStandardMaterial({ color: 0xd4d4d8 }));
     sockPole.position.y = 5;
@@ -685,12 +772,12 @@ export class TerrainManager {
     sock.position.set(2.5, 9.5, 0);
     sockGroup.add(sock);
 
-    sockGroup.position.set(ax + 45, 0.5, az + 200);
+    sockGroup.position.set(ax + 45, ay, az + 200);
     this.scene.add(sockGroup);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 8. DETAILED TOWNS & HOUSES (SEVERNY, PRIMORSK, ZHARKI, ROZHOK, NOVOREPNOYE)
+  // 8. DETAILED TOWNS & HOUSES
   // ═══════════════════════════════════════════════════════════════════════════
   createDetailedTownsAndHouses() {
     const brickMat = new THREE.MeshStandardMaterial({ color: 0x9b4a38, roughness: 0.7 });
@@ -701,6 +788,7 @@ export class TerrainManager {
     const glassMat = new THREE.MeshStandardMaterial({ color: 0x93c5fd, roughness: 0.2, metalness: 0.8 });
 
     const townCenters = [
+      { name: 'Pochinki Outskirts', x: -400, z: 500, count: 16, mat: brickMat, roof: roofRed },
       { name: 'Severny', x: 0, z: -3400, count: 12, mat: plasterMat, roof: roofGrey },
       { name: 'Primorsk', x: -2800, z: 800, count: 10, mat: brickMat, roof: roofRed },
       { name: 'Zharki', x: -3200, z: -3100, count: 9, mat: woodMat, roof: roofGrey },
@@ -710,33 +798,29 @@ export class TerrainManager {
 
     townCenters.forEach(tc => {
       for (let i = 0; i < tc.count; i++) {
-        const ox = ((i % 4) - 1.5) * 65 + (Math.random() - 0.5) * 20;
-        const oz = (Math.floor(i / 4) - 1.0) * 65 + (Math.random() - 0.5) * 20;
+        const ox = ((i % 4) - 1.5) * 65 + (Math.random() - 0.5) * 15;
+        const oz = (Math.floor(i / 4) - 1.0) * 65 + (Math.random() - 0.5) * 15;
         const hx = tc.x + ox;
         const hz = tc.z + oz;
         const hy = this.getHeightAt(hx, hz);
-        if (hy < 0.5) continue;
+        if (hy < 4.5) continue;
 
         const w = 18; const d = 14; const h = 9;
         const house = new THREE.Group();
 
-        // Main Walls
         const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), tc.mat);
         body.position.y = h / 2;
         house.add(body);
 
-        // Gabled Pitched Roof
         const roof = new THREE.Mesh(new THREE.ConeGeometry(w * 0.74, 4.5, 4), tc.roof);
         roof.position.y = h + 2.25;
         roof.rotation.y = Math.PI / 4;
         house.add(roof);
 
-        // Brick Chimney with Smoke Tip
         const chimney = new THREE.Mesh(new THREE.BoxGeometry(1.8, 5.0, 1.8), brickMat);
         chimney.position.set(w * 0.28, h + 2.5, d * 0.2);
         house.add(chimney);
 
-        // Front Covered Porch
         const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(6, 0.4, 4), tc.roof);
         porchRoof.position.set(0, 4.2, d / 2 + 2);
         house.add(porchRoof);
@@ -747,7 +831,6 @@ export class TerrainManager {
           house.add(post);
         });
 
-        // Glowing Windows
         [[-w * 0.25, h * 0.6], [w * 0.25, h * 0.6]].forEach(([wx, wy]) => {
           const win = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), glassMat);
           win.position.set(wx, wy, d / 2 + 0.05);
@@ -772,7 +855,7 @@ export class TerrainManager {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 9. WORKING GAS STATIONS WITH CANOPIES & CONVENIENCE STORES
+  // 9. WORKING GAS STATIONS
   // ═══════════════════════════════════════════════════════════════════════════
   createWorkingGasStations() {
     const stations = [
@@ -791,23 +874,20 @@ export class TerrainManager {
 
     stations.forEach(st => {
       const sy = this.getHeightAt(st.x, st.z);
-      if (sy < 0.5) return;
+      if (sy < 4.5) return;
 
       const stationGroup = new THREE.Group();
 
-      // Overhead Canopy (36m x 22m)
       const canopy = new THREE.Mesh(new THREE.BoxGeometry(36, 1.8, 22), canopyMat);
       canopy.position.y = 8.5;
       stationGroup.add(canopy);
 
-      // 4 Heavy Support Pillars
       [[-14, -7], [14, -7], [-14, 7], [14, 7]].forEach(([px, pz]) => {
         const col = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 8.5, 8), whiteMat);
         col.position.set(px, 4.25, pz);
         stationGroup.add(col);
       });
 
-      // 4 Fuel Pump Islands
       [[-8, -4], [8, -4], [-8, 4], [8, 4]].forEach(([px, pz]) => {
         const island = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.5, 7.0), whiteMat);
         island.position.set(px, 0.25, pz);
@@ -818,7 +898,6 @@ export class TerrainManager {
         stationGroup.add(pump);
       });
 
-      // 24/7 Convenience Store Building Behind Canopy
       const store = new THREE.Mesh(new THREE.BoxGeometry(26, 7.5, 14), storeMat);
       store.position.set(0, 3.75, -20);
       stationGroup.add(store);
@@ -827,7 +906,6 @@ export class TerrainManager {
       storeGlass.position.set(0, 3.5, -12.9);
       stationGroup.add(storeGlass);
 
-      // Roadside Price Totem Sign
       const totem = new THREE.Mesh(new THREE.BoxGeometry(3.5, 11, 1.2), canopyMat);
       totem.position.set(-24, 5.5, 12);
       stationGroup.add(totem);
@@ -848,12 +926,12 @@ export class TerrainManager {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 10. COASTAL LIGHTHOUSES & WOODEN FISHING PIERS
+  // 10. COASTAL LIGHTHOUSES & PIERS
   // ═══════════════════════════════════════════════════════════════════════════
   createCoastalLighthousesAndPiers() {
     const lighthouses = [
-      { x: -3000, z: 900 },  // Primorsk Cape
-      { x: 200, z: -3600 }   // Severny Promontory
+      { x: -3000, z: 900 },
+      { x: 200, z: -3600 }
     ];
 
     const redMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5 });
@@ -864,7 +942,6 @@ export class TerrainManager {
       const ly = this.getHeightAt(lh.x, lh.z);
       const lhGroup = new THREE.Group();
 
-      // Alternating Red & White Striped Lighthouse Tower
       for (let s = 0; s < 5; s++) {
         const seg = new THREE.Mesh(
           new THREE.CylinderGeometry(3.2 - s * 0.3, 3.5 - s * 0.3, 6, 12),
@@ -874,7 +951,6 @@ export class TerrainManager {
         lhGroup.add(seg);
       }
 
-      // Lantern Glass Room & Dome
       const lantern = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 3.5, 8), new THREE.MeshBasicMaterial({ color: 0xfffbeb }));
       lantern.position.y = 32;
       lhGroup.add(lantern);
@@ -890,13 +966,12 @@ export class TerrainManager {
       this.colliders.push({ type: 'circle', x: lh.x, z: lh.z, radius: 4.5, height: 36 });
     });
 
-    // Wooden Fishing Piers jutting into water at Severny & Novorepnoye
     [
       { x: 1600, z: 3400, len: 70 },
       { x: -3000, z: 700, len: 60 }
     ].forEach(pier => {
       const pMesh = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, pier.len), woodMat);
-      pMesh.position.set(pier.x, 0.8, pier.z);
+      pMesh.position.set(pier.x, 1.2, pier.z);
       pMesh.receiveShadow = true;
       this.scene.add(pMesh);
     });
@@ -907,6 +982,7 @@ export class TerrainManager {
   // ═══════════════════════════════════════════════════════════════════════════
   createPochinkiTown() {
     const cx = -400; const cz = 500;
+    const cy = this.getHeightAt(cx, cz); // 6.0m
     const whiteMat = new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.8 });
     const goldMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.2, metalness: 0.9 });
 
@@ -931,7 +1007,7 @@ export class TerrainManager {
     churchGroup.add(crossV);
     churchGroup.add(crossH);
 
-    churchGroup.position.set(cx, 0.5, cz);
+    churchGroup.position.set(cx, cy, cz);
     churchGroup.castShadow = true;
     this.scene.add(churchGroup);
 
@@ -943,6 +1019,7 @@ export class TerrainManager {
   // ═══════════════════════════════════════════════════════════════════════════
   createGeorgopolPort() {
     const gx = -2400; const gz = -1400;
+    const gy = this.getHeightAt(gx, gz);
     const containerColors = [
       new THREE.MeshStandardMaterial({ color: 0xd03020, roughness: 0.6 }),
       new THREE.MeshStandardMaterial({ color: 0x1860a8, roughness: 0.6 }),
@@ -958,7 +1035,7 @@ export class TerrainManager {
           const container = new THREE.Mesh(cGeo, containerColors[(row + col + h + 10) % containerColors.length]);
           const px = gx + col * 9 + 80;
           const pz = gz + row * 18 - 80;
-          container.position.set(px, 3 + h * 6, pz);
+          container.position.set(px, gy + 3 + h * 6, pz);
           container.castShadow = true;
           this.scene.add(container);
 
@@ -975,18 +1052,19 @@ export class TerrainManager {
   // ═══════════════════════════════════════════════════════════════════════════
   createMyltaPowerPlant() {
     const px = 3200; const pz = 800;
+    const py = this.getHeightAt(px, pz);
     const concreteMat = new THREE.MeshStandardMaterial({ color: 0x8a929e, roughness: 0.8 });
 
     // 50m Hyperboloid Cooling Tower
     const tower = new THREE.Mesh(new THREE.CylinderGeometry(14, 22, 50, 24, 1, true), concreteMat);
-    tower.position.set(px, 25, pz);
+    tower.position.set(px, py + 25, pz);
     tower.castShadow = true;
     this.scene.add(tower);
 
     this.colliders.push({ type: 'circle', x: px, z: pz, radius: 22, height: 50 });
 
     const reactor = new THREE.Mesh(new THREE.BoxGeometry(50, 18, 38), concreteMat);
-    reactor.position.set(px - 60, 9, pz);
+    reactor.position.set(px - 60, py + 9, pz);
     reactor.castShadow = true;
     this.scene.add(reactor);
 
@@ -998,14 +1076,15 @@ export class TerrainManager {
   // ═══════════════════════════════════════════════════════════════════════════
   createSchoolAndRozhok() {
     const sx = 400; const sz = -400;
+    const sy = this.getHeightAt(sx, sz);
     const schoolMat = new THREE.MeshStandardMaterial({ color: 0xd5c4a1, roughness: 0.7 });
 
     const mainWing = new THREE.Mesh(new THREE.BoxGeometry(60, 12, 24), schoolMat);
-    mainWing.position.set(sx, 6.5, sz);
+    mainWing.position.set(sx, sy + 6.5, sz);
     this.scene.add(mainWing);
 
     const gymWing = new THREE.Mesh(new THREE.BoxGeometry(32, 16, 28), schoolMat);
-    gymWing.position.set(sx + 45, 8.5, sz + 20);
+    gymWing.position.set(sx + 45, sy + 8.5, sz + 20);
     this.scene.add(gymWing);
 
     this.colliders.push({ type: 'box', minX: sx - 32, maxX: sx + 62, minZ: sz - 14, maxZ: sz + 36, height: 16 });
@@ -1013,12 +1092,13 @@ export class TerrainManager {
 
   createYasnayaPolyana() {
     const yx = 1800; const yz = -1400;
+    const yy = this.getHeightAt(yx, yz);
     const aptMat = new THREE.MeshStandardMaterial({ map: this.buildingTextures[1], roughness: 0.5 });
 
     [-120, 0, 120].forEach(ox => {
       [-80, 80].forEach(oz => {
         const apt = new THREE.Mesh(new THREE.BoxGeometry(28, 28, 20), aptMat);
-        apt.position.set(yx + ox, 14.5, yz + oz);
+        apt.position.set(yx + ox, yy + 14.5, yz + oz);
         apt.castShadow = true;
         this.scene.add(apt);
 
@@ -1062,12 +1142,13 @@ export class TerrainManager {
     ];
 
     signs.forEach(sl => {
+      const sy = this.getHeightAt(sl.x, sl.z);
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 7, 8), new THREE.MeshStandardMaterial({ color: 0x334155 }));
-      pole.position.set(sl.x, 3.5, sl.z);
+      pole.position.set(sl.x, sy + 3.5, sl.z);
       this.scene.add(pole);
 
       const board = new THREE.Mesh(new THREE.BoxGeometry(9, 3.2, 0.6), new THREE.MeshStandardMaterial({ color: 0x1e5a2b }));
-      board.position.set(sl.x, 6.2, sl.z);
+      board.position.set(sl.x, sy + 6.2, sl.z);
       this.scene.add(board);
     });
   }

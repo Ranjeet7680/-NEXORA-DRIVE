@@ -111,7 +111,7 @@ class Game {
 
     // 3. Spawn Initial Selected Vehicle in Pochinki Town Center
     this.spawnVehicle(this.saveData.selectedVehicle);
-    this.physicsEngine.position.set(-400, 0.45, 500);
+    this.physicsEngine.position.set(-400, 6.45, 380);
     this.physicsEngine.rotation.set(0, 0, 0);
     if (this.currentVehicleMesh) {
       this.currentVehicleMesh.position.copy(this.physicsEngine.position);
@@ -366,7 +366,7 @@ class Game {
       this.physicsEngine.terrainManager = this.terrainManager;
 
       // Spawn at Pochinki Town Center
-      this.physicsEngine.position.set(-400, 0.45, 500);
+      this.physicsEngine.position.set(-400, 6.45, 380);
       this.physicsEngine.rotation.set(0, 0, 0);
       this.physicsEngine.velocity.set(0, 0, 0);
       this.physicsEngine.angularVelocity = 0;
