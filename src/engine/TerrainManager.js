@@ -200,7 +200,8 @@ export class TerrainManager {
     const mat = new THREE.MeshStandardMaterial({
       vertexColors: true,
       roughness: 0.90,
-      metalness: 0.02
+      metalness: 0.02,
+      side: THREE.DoubleSide
     });
     this.terrainMesh = new THREE.Mesh(geo, mat);
     this.terrainMesh.receiveShadow = true;
@@ -224,6 +225,12 @@ export class TerrainManager {
     this.oceanMesh.position.set(0, 0.0, 0);
     this.oceanMesh.receiveShadow = true;
     this.scene.add(this.oceanMesh);
+  }
+
+  updateWater(deltaTime) {
+    if (!this.oceanMesh) return;
+    this.waterTime += deltaTime;
+    this.oceanMesh.position.y = Math.sin(this.waterTime * 1.5) * 0.04;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

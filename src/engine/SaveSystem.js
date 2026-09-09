@@ -9,7 +9,7 @@ export class SaveSystem {
       selectedVehicle: 'car',
       unlockedVehicles: ['car', 'mustang'],
       upgrades: {
-        car: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x9ba5b0 },
+        car: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x1d4ed8 },
         mustang: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x0066cc },
         bus: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0x0284c7 },
         bike: { engine: 0, brakes: 0, tires: 0, suspension: 0, color: 0xd90429 },

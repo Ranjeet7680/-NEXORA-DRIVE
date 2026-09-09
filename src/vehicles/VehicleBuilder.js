@@ -15,16 +15,16 @@ export class VehicleBuilder {
       else if (config.id === 'truck') colorHex = 0x334155;
       else if (config.id === 'suv') colorHex = 0x2e3846;
       else if (config.id === 'bike') colorHex = 0xd90429;
-      else colorHex = 0x9ba5b0; // Brooklyn Grey Metallic matching BMW i5 / M5 reference image!
+      else colorHex = 0x1d4ed8; // Deep vibrant BMW M Performance Blue!
     }
     
     // PBR Material Finish Selection
     const finish = customUpgrades.finish || 'gloss';
-    let roughness = 0.18;
-    let metalness = 0.88;
-    if (finish === 'matte') { roughness = 0.85; metalness = 0.1; }
-    else if (finish === 'metallic') { roughness = 0.12; metalness = 0.95; }
-    else if (finish === 'carbon') { roughness = 0.35; metalness = 0.8; }
+    let roughness = 0.35;
+    let metalness = 0.40;
+    if (finish === 'matte') { roughness = 0.82; metalness = 0.08; }
+    else if (finish === 'metallic') { roughness = 0.22; metalness = 0.60; }
+    else if (finish === 'carbon') { roughness = 0.38; metalness = 0.45; }
 
     const bodyMaterial = new THREE.MeshStandardMaterial({
       color: colorHex,
@@ -33,19 +33,17 @@ export class VehicleBuilder {
     });
 
     const bodyAccentMaterial = new THREE.MeshStandardMaterial({
-      color: (config.id === 'police') ? 0xffffff : 0x0a0c10, // Gloss Shadowline Black
-      roughness: 0.15,
-      metalness: 0.9
+      color: (config.id === 'police') ? 0xffffff : 0x111318, // Gloss Shadowline Black
+      roughness: 0.30,
+      metalness: 0.35
     });
 
-    const glassMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x88ccff,
+    const glassMaterial = new THREE.MeshStandardMaterial({
+      color: 0x111c28,
       transparent: true,
-      opacity: 0.28,
-      roughness: 0.05,
-      metalness: 0.85,
-      transmission: 0.85,
-      side: THREE.DoubleSide
+      opacity: 0.70,
+      roughness: 0.15,
+      metalness: 0.45
     });
 
     const darkMaterial = new THREE.MeshStandardMaterial({ color: 0x0a0d12, roughness: 0.55, metalness: 0.4 });

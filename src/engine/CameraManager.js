@@ -145,9 +145,6 @@ export class CameraManager {
 
         this.camera.position.copy(this.smoothPos);
         this.camera.lookAt(this.smoothLookAt);
-
-        // Keep camera roll completely level (no disorienting sideways tilt)
-        this.camera.rotation.z = 0;
         break;
       }
 
@@ -171,7 +168,6 @@ export class CameraManager {
 
         this.camera.position.copy(targetPos);
         this.camera.lookAt(lookTarget);
-        this.camera.rotation.z = 0;
         break;
       }
 
@@ -186,7 +182,6 @@ export class CameraManager {
 
         this.camera.position.copy(targetPos);
         this.camera.lookAt(lookTarget);
-        this.camera.rotation.z = 0;
         break;
       }
 
@@ -201,7 +196,6 @@ export class CameraManager {
 
         this.camera.position.copy(targetPos);
         this.camera.lookAt(lookTarget);
-        this.camera.rotation.z = 0;
         break;
       }
 
@@ -216,7 +210,6 @@ export class CameraManager {
 
         this.camera.position.copy(targetPos);
         this.camera.lookAt(lookTarget);
-        this.camera.rotation.z = 0;
         break;
       }
 
@@ -233,7 +226,6 @@ export class CameraManager {
 
         this.camera.position.set(camX, camY, camZ);
         this.camera.lookAt(vPos.clone().add(new THREE.Vector3(0, 1.1, 0)));
-        this.camera.rotation.z = 0;
         break;
       }
     }
