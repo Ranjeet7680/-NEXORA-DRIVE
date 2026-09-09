@@ -63,7 +63,7 @@ export class HUD {
         <button class="toolbar-btn" id="btnHeadlights">💡 <span id="headlightStateTxt">ON</span></button>
         <button class="toolbar-btn" id="btnHazard" title="Hazard Flasher">⚠️</button>
         <button class="toolbar-btn" id="btnIndicatorR" title="Right Signal">▶</button>
-        <button class="toolbar-btn" id="btnCamSwitch">📷 <span id="camName">FPV</span></button>
+        <button class="toolbar-btn" id="btnCamSwitch">📷 <span id="camName">Chase (3rd)</span></button>
         <button class="toolbar-btn" id="btnHorn">📣</button>
         <button class="toolbar-btn" id="btnRespawn">🔄</button>
       </div>
