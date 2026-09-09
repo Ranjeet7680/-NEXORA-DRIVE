@@ -7,7 +7,12 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test"
+    "test": "node --test",
+    "docker:build": "docker build -t nexora-drive:latest .",
+    "docker:run": "docker run -d -p 8080:80 --name nexora-drive-game nexora-drive:latest",
+    "docker:stop": "docker stop nexora-drive-game && docker rm nexora-drive-game",
+    "docker:compose": "docker compose up -d --build",
+    "docker:compose:down": "docker compose down"
   },
   "dependencies": {
     "three": "^0.170.0"
