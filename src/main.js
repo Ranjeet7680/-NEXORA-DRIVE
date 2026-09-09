@@ -84,10 +84,11 @@ class Game {
     this.driftTimer = 0;
 
     this.speedCamZones = [
-      { x: 0, z: -565, radius: 40, limit: 80 },
-      { x: 565, z: 0,  radius: 40, limit: 80 },
-      { x: 0, z: 565,  radius: 40, limit: 80 },
-      { x: -565, z: 0, radius: 40, limit: 80 },
+      { x: -800, z: 1500, radius: 45, limit: 90 }, // West Bridge
+      { x: 1500, z: 1500, radius: 45, limit: 90 }, // East Bridge
+      { x: -400, z: 200,  radius: 40, limit: 60 }, // Pochinki North
+      { x: 400,  z: -400, radius: 45, limit: 80 }, // Rozhok / School
+      { x: 0,    z: 2800, radius: 60, limit: 160 },// Airport Runway
     ];
     this.speedCamCooldown = 0;
 
@@ -484,11 +485,22 @@ class Game {
 
     // Refuel at fuel station zones
     const pos = this.physicsEngine.position;
-    const fuelZones = [{x:0,z:-100},{x:0,z:100},{x:-480,z:-480},{x:480,z:-480}];
+    const fuelZones = [
+      { x: -400, z: 250, name: 'Pochinki Gas' },
+      { x: -400, z: 2100, name: 'Military Access Gas' },
+      { x: 2600, z: 700, name: 'Mylta Coast Gas' },
+      { x: -2100, z: -1200, name: 'Georgopol Entrance Gas' },
+      { x: 0, z: -3200, name: 'Severny Road Gas' }
+    ];
     fuelZones.forEach(fz => {
       const dx = pos.x - fz.x, dz = pos.z - fz.z;
-      if (Math.sqrt(dx*dx + dz*dz) < 30 && speed < 5) {
-        this.fuel = Math.min(this.maxFuel, this.fuel + 25 * deltaTime);
+      if (Math.sqrt(dx*dx + dz*dz) < 35 && speed < 10) {
+        if (this.fuel < this.maxFuel) {
+          this.fuel = Math.min(this.maxFuel, this.fuel + 35 * deltaTime);
+          if (Math.random() < 0.05 && this.copilotHUD) {
+            this.copilotHUD.showBubbleResponse(`⛽ Refueling at ${fz.name}... [${Math.floor(this.fuel)}%]`);
+          }
+        }
       }
     });
 

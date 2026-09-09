@@ -303,64 +303,68 @@ export const MODULAR_PARTS = {
 
 export const MISSIONS = [
   {
-    id: 'taxi_1',
-    title: 'Downtown Taxi Fare',
+    id: 'airport_sprint',
+    title: 'Sosnovka Airport Runway Sprint',
+    type: 'race',
+    reward: 4500,
+    timeLimit: 140,
+    startPos: { x: -400, z: 500 },
+    targetPos: { x: 0, z: 2800 },
+    description: 'Sprint from Pochinki Church, cross the West Suspension Bridge, and reach the C-130 Hercules on the Military Airbase Runway!'
+  },
+  {
+    id: 'bridge_crossing',
+    title: 'Suspension Bridge Express Fare',
     type: 'taxi',
     vehicleRequired: 'taxi',
-    reward: 1200,
-    timeLimit: 90,
-    startPos: { x: -300, z: -300 },
-    targetPos: { x: 100, z: 200 },
-    description: 'Pick up VIP passenger at Metro Station and deliver to City Financial Center safely!'
+    reward: 2500,
+    timeLimit: 110,
+    startPos: { x: -400, z: 500 },
+    targetPos: { x: -800, z: 1500 },
+    description: 'Transport VIP clients to the West Sea Suspension Bridge observation deck before traffic jams build up!'
   },
   {
-    id: 'bus_1',
-    title: 'City Transit Line 5',
-    type: 'bus',
-    vehicleRequired: 'bus',
-    reward: 2000,
-    timeLimit: 150,
-    targetPos: { x: 300, z: 300 },
-    description: 'Complete the bus route picking up citizens across City and Forest stops!'
-  },
-  {
-    id: 'cargo_1',
-    title: 'Heavy Lumber Freight',
+    id: 'cargo_port',
+    title: 'Georgopol Container Freight Delivery',
     type: 'delivery',
     vehicleRequired: 'truck',
-    reward: 3500,
-    timeLimit: 180,
-    startPos: { x: 200, z: -400 },
-    targetPos: { x: 500, z: 500 },
-    description: 'Transport heavy cargo through winding Forest & Mountain roads without damaging payload!'
+    reward: 5000,
+    timeLimit: 200,
+    startPos: { x: -2400, z: -1400 },
+    targetPos: { x: 3200, z: 800 },
+    description: 'Haul heavy industrial cargo from Georgopol Port all the way to Mylta Power Nuclear Station across the 8km island!'
   },
   {
-    id: 'police_1',
-    title: 'Highway Speed Enforcement',
+    id: 'police_chase',
+    title: 'Erangel Island Pursuit',
     type: 'chase',
     vehicleRequired: 'police',
-    reward: 2800,
-    timeLimit: 120,
-    targetPos: { x: 0, z: 565 },
-    description: 'Intercept and apprehend the illegal street racer on the biomes ring highway!'
-  },
-  {
-    id: 'race_1',
-    title: 'Alpine Summit Time Trial',
-    type: 'race',
-    reward: 3000,
-    timeLimit: 100,
-    targetPos: { x: 850, z: 650 },
-    description: 'Race through hairpin mountain bends against the clock to set the summit record!'
-  },
-  {
-    id: 'ice_1',
-    title: 'Glacier Drift Challenge',
-    type: 'snow',
     reward: 4000,
-    timeLimit: 110,
-    targetPos: { x: 800, z: -500 },
-    description: 'Master treacherous icy slopes and frozen lake roads in extreme winter conditions!'
+    timeLimit: 130,
+    startPos: { x: -400, z: 500 },
+    targetPos: { x: 1800, z: -1400 },
+    description: 'Pursuit cruiser alert! Apprehend high-speed speeder heading towards Yasnaya Polyana boulevards!'
+  },
+  {
+    id: 'stalber_ascent',
+    title: 'Stalber Mountain Summit Climb',
+    type: 'race',
+    reward: 6000,
+    timeLimit: 160,
+    startPos: { x: 400, z: -400 },
+    targetPos: { x: 2300, z: -2600 },
+    description: 'Conquer the hairpin switchbacks and rugged crags to reach the ancient ruins at the highest mountain summit on Erangel!'
+  },
+  {
+    id: 'bus_island',
+    title: 'Erangel Inter-Island Transit Route',
+    type: 'bus',
+    vehicleRequired: 'bus',
+    reward: 3500,
+    timeLimit: 180,
+    startPos: { x: -400, z: 500 },
+    targetPos: { x: 1600, z: 3200 },
+    description: 'Drive the island transit bus across the East Suspension Bridge to Novorepnoye Port!'
   }
 ];
 
