@@ -1,6 +1,20 @@
-// Configuration for NEXORA DRIVE - Open World Driving Simulator
-
 export const MAP_CONFIGS = {
+  erangel: {
+    id: 'erangel',
+    name: 'Erangel 8KM Battleground Island',
+    subTitle: '8km × 8km Island, Pochinki, Sosnovka Military Base, 2 Sea Bridges, Georgopol & Stalber',
+    icon: '🏝️',
+    spawnPoint: { x: -400, y: 0.45, z: 500, rotY: 0 },
+    type: 'open_world'
+  },
+  metropolis: {
+    id: 'metropolis',
+    name: 'Erangel 8KM Battleground Island',
+    subTitle: '8km × 8km Island, Pochinki, Sosnovka Military Base, 2 Sea Bridges, Georgopol & Stalber',
+    icon: '🏝️',
+    spawnPoint: { x: -400, y: 0.45, z: 500, rotY: 0 },
+    type: 'open_world'
+  },
   sepang: {
     id: 'sepang',
     name: 'Sepang International Circuit (2025)',
@@ -8,14 +22,6 @@ export const MAP_CONFIGS = {
     icon: '🇲🇾',
     spawnPoint: { x: 0, y: 0.45, z: -450, rotY: 0 },
     type: 'race_track'
-  },
-  metropolis: {
-    id: 'metropolis',
-    name: 'Metropolis 3.2KM Open World',
-    subTitle: 'City, Alpine Mountains, Pine Forest, Beach & Glacier Pass',
-    icon: '🌆',
-    spawnPoint: { x: 0, y: 0.45, z: 0, rotY: 0 },
-    type: 'open_world'
   },
   indianapolis: {
     id: 'indianapolis',
@@ -36,11 +42,13 @@ export const MAP_CONFIGS = {
 };
 
 export const BIOMES = {
-  CITY: { id: 'city', name: 'Metropolis City', color: 0x445566, fogColor: 0x8899aa, friction: 1.0, icon: '🌆' },
-  FOREST: { id: 'forest', name: 'Pine Forest', color: 0x2e4e2e, fogColor: 0x5a7a5a, friction: 0.75, icon: '🌲' },
-  MOUNTAINS: { id: 'mountains', name: 'Alpine Mountains', color: 0x666655, fogColor: 0x9999aa, friction: 0.9, icon: '🏔️' },
-  RIVER: { id: 'river', name: 'River & Coast', color: 0x3b6e8c, fogColor: 0x7fa3bc, friction: 0.85, icon: '🌊' },
-  ICE: { id: 'ice', name: 'Ice Hills & Glaciers', color: 0xddeeff, fogColor: 0xcce0ff, friction: 0.25, icon: '❄️' }
+  POCHINKI: { id: 'pochinki', name: 'Pochinki Farmland', color: 0x4a7c2e, fogColor: 0x88bb99, friction: 1.0, icon: '🌾' },
+  MILITARY: { id: 'military', name: 'Sosnovka Military Base', color: 0x475569, fogColor: 0x8899aa, friction: 1.05, icon: '🎖️' },
+  FOREST: { id: 'forest', name: 'Erangel Pine Forest', color: 0x1f5119, fogColor: 0x5a7a5a, friction: 0.85, icon: '🌲' },
+  STALBER: { id: 'stalber', name: 'Stalber Mountain Peak', color: 0x625d56, fogColor: 0x9999aa, friction: 0.9, icon: '🏔️' },
+  GEORGOPOL: { id: 'georgopol', name: 'Georgopol Port & River', color: 0x3b6e8c, fogColor: 0x7fa3bc, friction: 0.95, icon: '🚢' },
+  MYLTA: { id: 'mylta', name: 'Mylta Power Coast', color: 0x5a6578, fogColor: 0x8899aa, friction: 1.0, icon: '⚡' },
+  BRIDGE: { id: 'bridge', name: 'Sosnovka Suspension Bridge', color: 0x334155, fogColor: 0x88aacc, friction: 1.15, icon: '🌉' }
 };
 
 export const RADIO_STATIONS = [

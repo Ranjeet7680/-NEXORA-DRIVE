@@ -6,7 +6,7 @@ export class SceneManager {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x4488cc); // Vivid blue sky background
 
-    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 4200);
+    this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
     this.camera.position.set(0, 5, 10);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
@@ -34,7 +34,7 @@ export class SceneManager {
     this.sunLight.shadow.mapSize.width = 2048;
     this.sunLight.shadow.mapSize.height = 2048;
     this.sunLight.shadow.camera.near = 0.5;
-    this.sunLight.shadow.camera.far = 2200;
+    this.sunLight.shadow.camera.far = 2500;
     const d = 750;
     this.sunLight.shadow.camera.left = -d;
     this.sunLight.shadow.camera.right = d;
@@ -48,8 +48,8 @@ export class SceneManager {
     this.fillLight.position.set(-300, 250, -250);
     this.scene.add(this.fillLight);
 
-    // Linear fog — crystal clear near player, soft haze at distant horizon
-    this.scene.fog = new THREE.Fog(0x8bb8e8, 750, 3600);
+    // Linear fog — crystal clear near player, soft haze at distant 7.5km horizon
+    this.scene.fog = new THREE.Fog(0x8bb8e8, 1200, 7500);
 
     // Cloud system
     this.clouds = [];

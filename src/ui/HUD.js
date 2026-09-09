@@ -355,13 +355,17 @@ export class HUD {
       ctx.stroke();
     }
 
-    // ── 4. Location Pins ──
+    // ── 4. Erangel Landmark Location Pins ──
     const pins = [
-      { x: 0, z: 0, col: '#00f0ff', r: 4 },         // Garage Hub
-      { x: -450, z: -450, col: '#ff9900', r: 3 },   // Depot
-      { x:  450, z: -450, col: '#ff3355', r: 3 },   // Summit
-      { x: -450, z:  450, col: '#ffdd00', r: 3 },   // Taxi
-      { x:  450, z:  450, col: '#88ddff', r: 3 },   // Glacier
+      { x: -400, z: 500, col: '#facc15', r: 4.5 },   // Pochinki Center
+      { x: 0, z: 2400, col: '#f87171', r: 4.5 },     // Sosnovka Military Base
+      { x: -800, z: 1500, col: '#fbbf24', r: 4.0 },  // West Suspension Bridge
+      { x: 1500, z: 1500, col: '#fbbf24', r: 4.0 },  // East Suspension Bridge
+      { x: -2400, z: -1400, col: '#60a5fa', r: 4.0 },// Georgopol Container Port
+      { x: 3200, z: 800, col: '#fb923c', r: 4.0 },   // Mylta Power
+      { x: 1800, z: -1400, col: '#facc15', r: 4.0 }, // Yasnaya Polyana
+      { x: 2300, z: -2600, col: '#e2e8f0', r: 4.0 }, // Stalber Peak
+      { x: 400, z: -400, col: '#34d399', r: 4.0 },   // School & Rozhok
     ];
     pins.forEach(p => {
       ctx.fillStyle = p.col;

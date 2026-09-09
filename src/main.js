@@ -54,8 +54,8 @@ class Game {
     this.aiSafetySystem = new AISafetySystem();
     this.particleManager = new ParticleSystemManager(this.sceneManager.scene);
 
-    // Multi-Map Architecture (Sepang International Circuit 2025 as Main Map)
-    this.currentMapId = 'sepang';
+    // Multi-Map Architecture (Erangel 8KM Battleground Island as Primary Map)
+    this.currentMapId = 'erangel';
     this.sepangManager = null;
     this.indianapolisManager = null;
     this.spaManager = null;
@@ -103,14 +103,14 @@ class Game {
 
     loadingScreen.show(currentConfig.loadingImage);
 
-    // 2. Initialize Sepang International Circuit as Primary Main Map
-    this.sepangManager = new SepangTrackManager(this.sceneManager.scene);
-    this.sepangManager.init();
-    this.physicsEngine.terrainManager = this.sepangManager;
+    // 2. Initialize Erangel 8KM Battleground Island Open World
+    this.terrainManager.generateWorld();
+    this.trafficManager.init();
+    this.physicsEngine.terrainManager = this.terrainManager;
 
-    // 3. Spawn Initial Selected Vehicle on Sepang Main Pit Straight
+    // 3. Spawn Initial Selected Vehicle in Pochinki Town Center
     this.spawnVehicle(this.saveData.selectedVehicle);
-    this.physicsEngine.position.set(0, 0.45, -450);
+    this.physicsEngine.position.set(-400, 0.45, 500);
     this.physicsEngine.rotation.set(0, 0, 0);
     if (this.currentVehicleMesh) {
       this.currentVehicleMesh.position.copy(this.physicsEngine.position);
@@ -271,6 +271,8 @@ class Game {
     if (this.indianapolisManager) this.indianapolisManager.trackGroup.visible = false;
     if (this.spaManager) this.spaManager.trackGroup.visible = false;
     if (this.terrainManager.terrainMesh) this.terrainManager.terrainMesh.visible = false;
+    if (this.terrainManager.oceanMesh) this.terrainManager.oceanMesh.visible = false;
+    if (this.terrainManager.roadMeshes) this.terrainManager.roadMeshes.forEach(m => m.visible = false);
     this.trafficManager.trafficVehicles.forEach(v => v.mesh.visible = false);
 
     if (mapId === 'sepang') {
@@ -289,6 +291,11 @@ class Game {
       this.physicsEngine.rotation.set(0, 0, 0);
       this.physicsEngine.velocity.set(0, 0, 0);
       this.physicsEngine.angularVelocity = 0;
+      if (this.currentVehicleMesh) {
+        this.currentVehicleMesh.position.copy(this.physicsEngine.position);
+        this.currentVehicleMesh.rotation.copy(this.physicsEngine.rotation);
+      }
+      this.cameraManager.reset();
 
       if (this.copilotHUD) {
         this.copilotHUD.showBubbleResponse('🇲🇾 Welcome to Sepang International Circuit! 2025 Layout Ready.');
@@ -309,6 +316,11 @@ class Game {
       this.physicsEngine.rotation.set(0, Math.PI / 2, 0);
       this.physicsEngine.velocity.set(0, 0, 0);
       this.physicsEngine.angularVelocity = 0;
+      if (this.currentVehicleMesh) {
+        this.currentVehicleMesh.position.copy(this.physicsEngine.position);
+        this.currentVehicleMesh.rotation.copy(this.physicsEngine.rotation);
+      }
+      this.cameraManager.reset();
 
       if (this.copilotHUD) {
         this.copilotHUD.showBubbleResponse('🌲 Welcome to Circuit de Spa-Francorchamps! Eau Rouge & Raidillon Ready.');
@@ -329,30 +341,42 @@ class Game {
       this.physicsEngine.rotation.set(0, Math.PI / 2, 0);
       this.physicsEngine.velocity.set(0, 0, 0);
       this.physicsEngine.angularVelocity = 0;
+      if (this.currentVehicleMesh) {
+        this.currentVehicleMesh.position.copy(this.physicsEngine.position);
+        this.currentVehicleMesh.rotation.copy(this.physicsEngine.rotation);
+      }
+      this.cameraManager.reset();
 
       if (this.copilotHUD) {
         this.copilotHUD.showBubbleResponse('🏁 Welcome to Indianapolis Motor Speedway! 2.5-Mile Oval Race Ready.');
       }
     } else {
-      // Metropolis Open World
+      // Erangel 8KM Battleground Island Open World
       if (!this.terrainManager.terrainMesh) {
         this.terrainManager.generateWorld();
         this.trafficManager.init();
       } else {
         this.terrainManager.terrainMesh.visible = true;
+        if (this.terrainManager.oceanMesh) this.terrainManager.oceanMesh.visible = true;
+        if (this.terrainManager.roadMeshes) this.terrainManager.roadMeshes.forEach(m => m.visible = true);
         this.trafficManager.trafficVehicles.forEach(v => v.mesh.visible = true);
       }
 
       this.physicsEngine.terrainManager = this.terrainManager;
 
-      // Spawn at Central City Hub
-      this.physicsEngine.position.set(0, 0.45, 0);
+      // Spawn at Pochinki Town Center
+      this.physicsEngine.position.set(-400, 0.45, 500);
       this.physicsEngine.rotation.set(0, 0, 0);
       this.physicsEngine.velocity.set(0, 0, 0);
       this.physicsEngine.angularVelocity = 0;
+      if (this.currentVehicleMesh) {
+        this.currentVehicleMesh.position.copy(this.physicsEngine.position);
+        this.currentVehicleMesh.rotation.copy(this.physicsEngine.rotation);
+      }
+      this.cameraManager.reset();
 
       if (this.copilotHUD) {
-        this.copilotHUD.showBubbleResponse('🏙️ Switched to Metropolis 3.2KM Open World freeroam.');
+        this.copilotHUD.showBubbleResponse('🏝️ Switched to Erangel 8KM Battleground Island open world.');
       }
     }
   }
@@ -508,7 +532,7 @@ class Game {
     }
 
     // ── Water Animation ──
-    if (this.currentMapId === 'metropolis' && this.terrainManager) {
+    if ((this.currentMapId === 'erangel' || this.currentMapId === 'metropolis') && this.terrainManager) {
       this.terrainManager.updateWater(deltaTime);
     }
   }
@@ -538,8 +562,10 @@ class Game {
       inputThrottle: this.physicsEngine.inputThrottle
     });
 
-    // 3. AI Traffic Step (Only active in Metropolis Open World)
-    if (this.currentMapId === 'metropolis' && this.trafficManager) {
+    const isOpenWorld = (this.currentMapId === 'erangel' || this.currentMapId === 'metropolis');
+
+    // 3. AI Traffic Step (Active in Erangel Open World)
+    if (isOpenWorld && this.trafficManager) {
       this.trafficManager.update(deltaTime, this.physicsEngine.position);
     }
 
@@ -556,7 +582,7 @@ class Game {
     );
 
     // 6. AI Safety & Guidance Step
-    const activeTraffic = (this.currentMapId === 'metropolis' && this.trafficManager) ? this.trafficManager.trafficVehicles : [];
+    const activeTraffic = (isOpenWorld && this.trafficManager) ? this.trafficManager.trafficVehicles : [];
     this.aiSafetySystem.update(
       this.physicsEngine.speedKmh,
       this.physicsEngine.position,

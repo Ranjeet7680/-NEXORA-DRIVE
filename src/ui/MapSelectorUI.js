@@ -34,18 +34,19 @@ export class MapSelectorUI {
             <button class="select-track-btn sepang-action-btn">RACE AT SEPANG</button>
           </div>
 
-          <!-- Card 2: Metropolis 3.2KM Open World -->
-          <div class="track-card" data-map="metropolis">
-            <div class="track-badge">OPEN WORLD FREEROAM</div>
-            <div class="track-icon">🌆</div>
-            <h3>METROPOLIS 3.2KM OPEN WORLD</h3>
-            <p>Freeroam across 5 biomes: Downtown Skyscrapers, Alpine Mountains, Pine Forest, Beach Highway, and Glacier Pass with 32 AI traffic bots.</p>
+          <!-- Card 2: Erangel 8KM Battleground Island -->
+          <div class="track-card" data-map="erangel">
+            <div class="track-badge" style="background:#16a34a; color:#fff;">8KM MASSIVE OPEN WORLD</div>
+            <div class="track-icon">🏝️</div>
+            <h3>ERANGEL 8KM BATTLEGROUND ISLAND</h3>
+            <p>Explore the full 8.0 km × 8.0 km island! Pochinki church & town, Sosnovka Military Base radar & runway, 2 Sea Suspension Bridges, Georgopol Port, Stalber Mountain Peak & Mylta Power.</p>
             <div class="track-specs">
-              <span>📏 3.2 km × 3.2 km World</span>
-              <span>🚗 32 AI Traffic Bots</span>
-              <span>🛣️ 4-Lane Highway Circuit</span>
+              <span>🌍 8.0 km × 8.0 km World (64 km²)</span>
+              <span>🌉 2 Sea Suspension Bridges</span>
+              <span>🌲 Over 1,200 3D Trees & Roads</span>
+              <span>🚗 36 Active AI Traffic Vehicles</span>
             </div>
-            <button class="select-track-btn">DRIVE FREEROAM</button>
+            <button class="select-track-btn" style="background:linear-gradient(135deg, #16a34a, #15803d); color:#fff; font-weight:bold;">EXPLORE 8KM ERANGEL</button>
           </div>
 
           <!-- Card 3: Indianapolis Motor Speedway -->
