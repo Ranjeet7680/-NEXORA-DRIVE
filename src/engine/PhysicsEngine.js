@@ -16,7 +16,7 @@ export class PhysicsEngine {
     this.steeringAngle = 0;
     this.isDrifting = false;
     this.surfaceFriction = 1.0;
-    this.currentBiome = BIOMES.CITY;
+    this.currentBiome = BIOMES.POCHINKI || BIOMES.CITY;
 
     // Body Motion Roll / Pitch (Weight transfer)
     this.bodyRoll = 0;
@@ -173,7 +173,9 @@ export class PhysicsEngine {
     // ── 8. PHYSICAL OBSTACLE COLLISION DETECTION & RESPONSE ──
     // "Block ke aar ya paar nahi ho sakta"
     const vehicleRadius = Math.max(1.4, this.vehicleConfig.dimensions.length * 0.35);
-    const collision = this.terrainManager.checkCollision(this.position.x, this.position.z, vehicleRadius);
+    const collision = (this.terrainManager && typeof this.terrainManager.checkCollision === 'function')
+      ? this.terrainManager.checkCollision(this.position.x, this.position.z, vehicleRadius)
+      : null;
 
     if (collision) {
       // 1. Push car OUT of solid obstacle so it NEVER penetrates/passes through

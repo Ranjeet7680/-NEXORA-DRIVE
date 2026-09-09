@@ -76,23 +76,7 @@ export class TerrainManager {
       return -8.0;
     }
 
-    // 2. Surrounding Ocean Outer Boundaries (Beyond 3600m radius)
-    const distFromCenter = Math.sqrt(x * x + z * z);
-    if (distFromCenter > 3800) {
-      return -12.0; // Deep outer ocean
-    }
-    if (distFromCenter > 3400) {
-      // Coastal slope into ocean
-      const t = (distFromCenter - 3400) / 400;
-      return 6.0 * (1 - t) - 12.0 * t;
-    }
-
-    // 3. Georgopol River Inlet Channel
-    if (x >= -3600 && x <= -1800 && z >= -1850 && z <= -1450) {
-      return -5.0; // Georgopol water inlet
-    }
-
-    // 4. Stalber Mountain Peak (NE: x ~ 1800 to 3000, z ~ -3200 to -1900)
+    // 2. Stalber Mountain Peak (NE: x ~ 1800 to 3000, z ~ -3200 to -1900)
     if (x > 1400 && z < -1600 && x < 3300 && z > -3500) {
       const dx = (x - 2300) / 700;
       const dz = (z - (-2600)) / 700;
@@ -102,6 +86,22 @@ export class TerrainManager {
         const rugged = Math.sin(x * 0.02) * Math.cos(z * 0.02) * 10;
         return 6.0 + peak + rugged;
       }
+    }
+
+    // 3. Georgopol River Inlet Channel
+    if (x >= -3600 && x <= -1800 && z >= -1850 && z <= -1450) {
+      return -5.0; // Georgopol water inlet
+    }
+
+    // 4. Surrounding Ocean Outer Boundaries (Beyond 3600m radius)
+    const distFromCenter = Math.sqrt(x * x + z * z);
+    if (distFromCenter > 3800) {
+      return -12.0; // Deep outer ocean
+    }
+    if (distFromCenter > 3400) {
+      // Coastal slope into ocean
+      const t = (distFromCenter - 3400) / 400;
+      return 6.0 * (1 - t) - 12.0 * t;
     }
 
     // 5. Sosnovka Military Island Central Hill (South: x ~ -300 to 400, z ~ 2400 to 3200)
@@ -1190,7 +1190,40 @@ export class TerrainManager {
     }
   }
 
+  addCollider(col) {
+    this.colliders.push(col);
+    let minX, maxX, minZ, maxZ;
+    const r = col.radius || 2.0;
+    if (col.type === 'box') {
+      minX = col.minX; maxX = col.maxX; minZ = col.minZ; maxZ = col.maxZ;
+    } else {
+      minX = col.x - r; maxX = col.x + r;
+      minZ = col.z - r; maxZ = col.z + r;
+    }
+
+    const cellX1 = Math.floor(minX / this.gridCellSize);
+    const cellX2 = Math.floor(maxX / this.gridCellSize);
+    const cellZ1 = Math.floor(minZ / this.gridCellSize);
+    const cellZ2 = Math.floor(maxZ / this.gridCellSize);
+
+    for (let cx = cellX1; cx <= cellX2; cx++) {
+      for (let cz = cellZ1; cz <= cellZ2; cz++) {
+        const key = `${cx},${cz}`;
+        if (!this.grid.has(key)) this.grid.set(key, []);
+        this.grid.get(key).push(col);
+      }
+    }
+  }
+
+  populateSpatialGrid() {
+    this._buildSpatialGrid();
+  }
+
   checkCollision(posX, posZ, vehicleRadius = 1.6) {
+    if (this.grid.size === 0 && this.colliders.length > 0) {
+      this._buildSpatialGrid();
+    }
+
     const cellX = Math.floor(posX / this.gridCellSize);
     const cellZ = Math.floor(posZ / this.gridCellSize);
 
@@ -1213,10 +1246,12 @@ export class TerrainManager {
               const dist = Math.sqrt(distSq) || 0.001;
               return { normalX: diffX / dist, normalZ: diffZ / dist, overlap: vehicleRadius - dist };
             }
-          } else if (col.type === 'circle') {
+          } else {
+            // Default to radial circle check for buildings, trees, cylinders
+            const colRadius = col.radius || 2.0;
             const diffX = posX - col.x;
             const diffZ = posZ - col.z;
-            const minDist = col.radius + vehicleRadius;
+            const minDist = colRadius + vehicleRadius;
             const distSq = diffX * diffX + diffZ * diffZ;
 
             if (distSq < minDist * minDist) {
@@ -1232,8 +1267,9 @@ export class TerrainManager {
   }
 
   updateWater(deltaTime) {
-    if (!this.oceanMesh) return;
     this.waterTime += deltaTime;
-    this.oceanMesh.position.y = Math.sin(this.waterTime * 0.9) * 0.08;
+    if (this.oceanMesh) {
+      this.oceanMesh.position.y = Math.sin(this.waterTime * 0.9) * 0.08;
+    }
   }
 }

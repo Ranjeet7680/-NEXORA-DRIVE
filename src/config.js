@@ -48,7 +48,8 @@ export const BIOMES = {
   STALBER: { id: 'stalber', name: 'Stalber Mountain Peak', color: 0x625d56, fogColor: 0x9999aa, friction: 0.9, icon: '🏔️' },
   GEORGOPOL: { id: 'georgopol', name: 'Georgopol Port & River', color: 0x3b6e8c, fogColor: 0x7fa3bc, friction: 0.95, icon: '🚢' },
   MYLTA: { id: 'mylta', name: 'Mylta Power Coast', color: 0x5a6578, fogColor: 0x8899aa, friction: 1.0, icon: '⚡' },
-  BRIDGE: { id: 'bridge', name: 'Sosnovka Suspension Bridge', color: 0x334155, fogColor: 0x88aacc, friction: 1.15, icon: '🌉' }
+  BRIDGE: { id: 'bridge', name: 'Sosnovka Suspension Bridge', color: 0x334155, fogColor: 0x88aacc, friction: 1.15, icon: '🌉' },
+  CITY: { id: 'city', name: 'Pochinki City & Urban', color: 0x4a7c2e, fogColor: 0x88bb99, friction: 1.0, icon: '🏙️' }
 };
 
 export const RADIO_STATIONS = [

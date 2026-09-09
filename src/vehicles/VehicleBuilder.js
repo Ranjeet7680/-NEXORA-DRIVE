@@ -255,6 +255,35 @@ export class VehicleBuilder {
     rearBrakeLight.position.set(0, headY, -config.dimensions.length * 0.52);
     chassis.add(rearBrakeLight);
 
+    // Ensure all vehicle types have interactive brake lights meshes
+    let brakeLights = chassis.userData.brakeLights;
+    if (!brakeLights || brakeLights.length === 0) {
+      const bGeo = new THREE.BoxGeometry(0.18, 0.08, 0.04);
+      const bLeft = new THREE.Mesh(bGeo, brakeLightMaterial.clone());
+      const bRight = new THREE.Mesh(bGeo, brakeLightMaterial.clone());
+      const rearZ = -config.dimensions.length * 0.48;
+      bLeft.position.set(-headX, headY, rearZ);
+      bRight.position.set(headX, headY, rearZ);
+      chassis.add(bLeft);
+      chassis.add(bRight);
+      brakeLights = [bLeft, bRight];
+      chassis.userData.brakeLights = brakeLights;
+    }
+
+    // Ensure all vehicle types have interactive turn indicator meshes
+    let indicators = chassis.userData.indicators;
+    if (!indicators || indicators.length === 0) {
+      const indGeo = new THREE.BoxGeometry(0.08, 0.04, 0.04);
+      const indL = new THREE.Mesh(indGeo, indicatorMaterial.clone());
+      const indR = new THREE.Mesh(indGeo, indicatorMaterial.clone());
+      indL.position.set(-headX, headY - 0.1, headZ + 0.02);
+      indR.position.set(headX, headY - 0.1, headZ + 0.02);
+      chassis.add(indL);
+      chassis.add(indR);
+      indicators = [indL, indR];
+      chassis.userData.indicators = indicators;
+    }
+
     group.userData = {
       chassis,
       wheels,
@@ -262,8 +291,8 @@ export class VehicleBuilder {
       lightBeams: [beamLeft, beamRight],
       interiorLight: domeLight,
       rearBrakeLight,
-      brakeLights: chassis.userData.brakeLights || [],
-      indicators: chassis.userData.indicators || [],
+      brakeLights,
+      indicators,
       policeLights: chassis.userData.policeLights || [],
       config,
       steeringWheelMesh: chassis.getObjectByName('steeringWheelMesh'),

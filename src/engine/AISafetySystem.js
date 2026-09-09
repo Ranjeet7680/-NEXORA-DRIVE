@@ -23,18 +23,18 @@ export class AISafetySystem {
     }
 
     // 2. Excessive Speed Warning
-    if (biome.id === 'city' && speedKmh > 120) {
+    if (biome?.id === 'city' && speedKmh > 120) {
       this.alerts.push('⚠️ SPEED WARNING: Exceeding City Limit (120 KM/H)');
       this.speedingCount++;
     }
 
     // 3. Sharp Mountain Edge Warning
-    if (biome.id === 'mountains' && speedKmh > 80) {
+    if ((biome?.id === 'mountains' || biome?.id === 'stalber') && speedKmh > 80) {
       this.alerts.push('⚠️ MOUNTAIN WARNING: Reduce speed before hairpin turns!');
     }
 
     // 4. Ice Traction Warning
-    if (biome.id === 'ice' && speedKmh > 70) {
+    if (biome?.id === 'ice' && speedKmh > 70) {
       this.alerts.push('❄️ TRACTION ALERT: Slippery Ice Road. Controlled drift recommended.');
     }
 

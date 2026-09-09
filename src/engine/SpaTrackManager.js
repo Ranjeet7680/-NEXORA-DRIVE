@@ -535,6 +535,21 @@ export class SpaTrackManager {
             overlap: overlap
           };
         }
+      } else {
+        const colRadius = c.radius || 2.0;
+        const dx = x - c.x;
+        const dz = z - c.z;
+        const minDist = colRadius + radius;
+        const distSq = dx * dx + dz * dz;
+
+        if (distSq < minDist * minDist) {
+          const dist = Math.max(0.001, Math.sqrt(distSq));
+          return {
+            normalX: dx / dist,
+            normalZ: dz / dist,
+            overlap: minDist - dist
+          };
+        }
       }
     }
     return null;
